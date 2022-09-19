@@ -4,31 +4,27 @@
     <title>Feeds of Federico Maggi from Inoreader [https://www.inoreader.com]</title>
   </head>
   <body>
-    <outline text="Allarmi consumatori e reazioni a notifiche di prodotti non alimentari pericolosi" title="Allarmi consumatori e reazioni a notifiche di prodotti non alimentari pericolosi" type="rss" xmlUrl="http://www.salute.gov.it/portale/news/RSS_avvisi_rapex.xml" htmlUrl="http://www.salute.gov.it/"/>
-    <outline text="Campagne di comunicazione" title="Campagne di comunicazione" type="rss" xmlUrl="http://www.salute.gov.it/portale/news/RSS_campagne.xml" htmlUrl="http://www.salute.gov.it/"/>
-    <outline text="Comunicati stampa" title="Comunicati stampa" type="rss" xmlUrl="http://www.salute.gov.it/portale/news/RSS_comunicati.xml" htmlUrl="http://www.salute.gov.it/"/>
-    <outline text="Richiami di prodotti alimentari da parte degli operatori" title="Richiami di prodotti alimentari da parte degli operatori" type="rss" xmlUrl="http://www.salute.gov.it/portale/news/RSS_avvisi_richiami_osa.xml" htmlUrl="http://www.salute.gov.it/"/>
     <outline text="📩 Infosec | Newsletter" title="📩 Infosec | Newsletter">
       <outline text="BadCyber" title="BadCyber" type="rss" xmlUrl="https://badcyber.com/feed" htmlUrl="https://badcyber.com/"/>
-      <outline text="hive-five" title="hive-five" type="rss" xmlUrl="incoming-hivefive2@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="Blockchain Threat Intelligence" title="Blockchain Threat Intelligence" type="rss" xmlUrl="incoming-blockchainthreatint2@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="AWS Security Digest" title="AWS Security Digest" type="rss" xmlUrl="incoming-awssecuritydigest2@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="thisweekin4n6-nl" title="thisweekin4n6-nl" type="rss" xmlUrl="incoming-thisweekin4n6nl@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="api-security-nl" title="api-security-nl" type="rss" xmlUrl="incoming-apisecuritynl@inoreader.com" htmlUrl="https://www.inoreader.com"/>
+      <outline text="hive-five" title="hive-five" type="rss" />
+      <outline text="Blockchain Threat Intelligence" title="Blockchain Threat Intelligence" type="rss" />
+      <outline text="AWS Security Digest" title="AWS Security Digest" type="rss" />
+      <outline text="thisweekin4n6-nl" title="thisweekin4n6-nl" type="rss" />
+      <outline text="api-security-nl" title="api-security-nl" type="rss" />
       <outline text="Risky Business News" title="Risky Business News" type="rss" xmlUrl="https://riskybiznews.substack.com/feed" htmlUrl="https://riskybiznews.substack.com/"/>
-      <outline text="~this week in security~ Archive Feed" title="~this week in security~ Archive Feed" type="rss" xmlUrl="https://us18.campaign-archive.com/feed?u=e1ad6038c994abec17dafb116&amp;id=a2457dc8ad" htmlUrl="https://us18.campaign-archive.com/feed?u=e1ad6038c994abec17dafb116&amp;id=a2457dc8ad"/>
+      <outline text="~this week in security~ Archive Feed" title="~this week in security~ Archive Feed" type="rss" />
       <outline text="tl;dr sec" title="tl;dr sec" type="rss" xmlUrl="https://tldrsec.com/feed.xml" htmlUrl="https://tldrsec.com/"/>
-      <outline text="Dragon News Bytes" title="Dragon News Bytes" type="rss" xmlUrl="incoming-dragonnewsbytes@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="Last Week In AWS" title="Last Week In AWS" type="rss" xmlUrl="incoming-lastweekinaws24@inoreader.com" htmlUrl="https://www.inoreader.com"/>
+      <outline text="Dragon News Bytes" title="Dragon News Bytes" type="rss" />
+      <outline text="Last Week In AWS" title="Last Week In AWS" type="rss" />
       <outline text="Bad Sector Labs Blog" title="Bad Sector Labs Blog" type="rss" xmlUrl="https://blog.badsectorlabs.com/feeds/all.atom.xml" htmlUrl="https://blog.badsectorlabs.com/"/>
-      <outline text="RTC security" title="RTC security" type="rss" xmlUrl="incoming-rtcsecurity@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="SANS NewsBites" title="SANS NewsBites" type="rss" xmlUrl="incoming-sansnewsbites5@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="Advisory Week" title="Advisory Week" type="rss" xmlUrl="incoming-advisoryweek@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="Unsupervised Learning" title="Unsupervised Learning" type="rss" xmlUrl="incoming-unsupervisedlearni20@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="Return on Security" title="Return on Security" type="rss" xmlUrl="incoming-returnonsecurity@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="Zero Day" title="Zero Day" type="rss" xmlUrl="incoming-zeroday4@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="Cyber Defence News" title="Cyber Defence News" type="rss" xmlUrl="incoming-cyberdefencenews@inoreader.com" htmlUrl="https://www.inoreader.com"/>
-      <outline text="MEMCM" title="MEMCM" type="rss" xmlUrl="incoming-memcm@inoreader.com" htmlUrl="https://www.inoreader.com"/>
+      <outline text="RTC security" title="RTC security" type="rss" />
+      <outline text="SANS NewsBites" title="SANS NewsBites" type="rss" />
+      <outline text="Advisory Week" title="Advisory Week" type="rss" />
+      <outline text="Unsupervised Learning" title="Unsupervised Learning" type="rss" />
+      <outline text="Return on Security" title="Return on Security" type="rss" />
+      <outline text="Zero Day" title="Zero Day" type="rss" />
+      <outline text="Cyber Defence News" title="Cyber Defence News" type="rss" />
+      <outline text="MEMCM" title="MEMCM" type="rss" />
     </outline>
     <outline text="🔐 Infosec | Top" title="🔐 Infosec | Top">
       <outline text="Forbes - Cybersecurity" title="Forbes - Cybersecurity" type="rss" xmlUrl="https://www.forbes.com/cybersecurity/feed/" htmlUrl="http://www.forbes.com/cybersecurity/"/>
@@ -79,7 +75,7 @@
     <outline text="🔏 Infosec | Curated" title="🔏 Infosec | Curated">
       <outline text="Daniel Miessler" title="Daniel Miessler" type="rss" xmlUrl="https://www.kill-the-newsletter.com/feeds/5jpvmkqkknziksticcab.xml" htmlUrl="https://www.kill-the-newsletter.com/"/>
       <outline text="EdOverflow" title="EdOverflow" type="rss" xmlUrl="https://www.kill-the-newsletter.com/feeds/ukpomnnynrgztnxjuq0i.xml" htmlUrl="https://www.kill-the-newsletter.com/"/>
-      <outline text="Securi Bee Newsletter" title="Securi Bee Newsletter" type="rss" xmlUrl="incoming-securibeenewsletter@inoreader.com" htmlUrl="https://www.inoreader.com"/>
+      <outline text="Securi Bee Newsletter" title="Securi Bee Newsletter" type="rss" />
       <outline text="The Daily Swig | Web security digest" title="The Daily Swig | Web security digest" type="rss" xmlUrl="https://portswigger.net/daily-swig/rss" htmlUrl="https://portswigger.net/daily-swig"/>
       <outline text="/r/netsec" title="/r/netsec" type="rss" xmlUrl="http://www.reddit.com/r/netsec/.rss" htmlUrl="http://www.reddit.com/r/netsec/"/>
     </outline>
@@ -439,7 +435,7 @@
       <outline text="EdOverflow" title="EdOverflow" type="rss" xmlUrl="https://www.kill-the-newsletter.com/feeds/ukpomnnynrgztnxjuq0i.xml" htmlUrl="https://www.kill-the-newsletter.com/"/>
       <outline text="~this week in security~ Archive Feed" title="~this week in security~ Archive Feed" type="rss" xmlUrl="https://us18.campaign-archive.com/feed?u=e1ad6038c994abec17dafb116&amp;id=a2457dc8ad" htmlUrl="https://us18.campaign-archive.com/feed?u=e1ad6038c994abec17dafb116&amp;id=a2457dc8ad"/>
       <outline text="tl;dr sec" title="tl;dr sec" type="rss" xmlUrl="https://tldrsec.com/feed.xml" htmlUrl="https://tldrsec.com/"/>
-      <outline text="Securi Bee Newsletter" title="Securi Bee Newsletter" type="rss" xmlUrl="incoming-securibeenewsletter@inoreader.com" htmlUrl="https://www.inoreader.com"/>
+      <outline text="Securi Bee Newsletter" title="Securi Bee Newsletter" type="rss" htmlUrl="https://www.inoreader.com"/>
       <outline text="ThreatFabric" title="ThreatFabric" type="rss" xmlUrl="https://threatfabric.com/feed.xml" htmlUrl="https://www.threatfabric.com"/>
       <outline text="Cado Security" title="Cado Security" type="rss" xmlUrl="https://www.cadosecurity.com/feed/" htmlUrl="https://www.cadosecurity.com/"/>
       <outline text="Cyble" title="Cyble" type="rss" xmlUrl="https://blog.cyble.com/feed/" htmlUrl="https://blog.cyble.com/"/>
