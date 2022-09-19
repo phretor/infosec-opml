@@ -167,7 +167,7 @@
       <outline text="Microsoft BlueHat Blog" title="Microsoft BlueHat Blog" type="rss" xmlUrl="https://blogs.technet.microsoft.com/bluehat/feed/" htmlUrl="https://blogs.technet.microsoft.com/bluehat"/>
       <outline text="ToolsWatch.org – The Hackers Arsenal Tools Portal" title="ToolsWatch.org – The Hackers Arsenal Tools Portal" type="rss" xmlUrl="http://www.toolswatch.org/feed/" htmlUrl="http://www.toolswatch.org/"/>
     </outline>
-    <outline text="🤦‍♂️ Infosec | People" title="🤦‍♂️ Infosec | People">
+    <outline text="🤦 Infosec | People" title="🤦 Infosec | People">
       <outline text="Underground Tradecraft" title="Underground Tradecraft" type="rss" xmlUrl="https://grugq.tumblr.com/rss" htmlUrl="https://grugq.tumblr.com/"/>
       <outline text="grugq's domain" title="grugq's domain" type="rss" xmlUrl="https://gru.gq/feed/" htmlUrl="https://gru.gq/"/>
       <outline text="Electrospaces.net" title="Electrospaces.net" type="rss" xmlUrl="https://www.electrospaces.net/feeds/posts/default" htmlUrl="https://www.electrospaces.net/"/>
@@ -220,7 +220,7 @@
       <outline text="Threatpost | The first stop for security news" title="Threatpost | The first stop for security news" type="rss" xmlUrl="http://threatpost.com/feed" htmlUrl="http://threatpost.com/"/>
       <outline text="ZDNet | security RSS" title="ZDNet | security RSS" type="rss" xmlUrl="https://www.zdnet.com/blog/security/rss.xml" htmlUrl="http://www.zdnet.com/"/>
     </outline>
-    <outline text="👩‍💻 Tech | Curated" title="👩‍💻 Tech | Curated">
+    <outline text="💻 Tech | Curated" title="💻 Tech | Curated">
       <outline text="Techmeme" title="Techmeme" type="rss" xmlUrl="http://www.techmeme.com/index.xml" htmlUrl="http://www.techmeme.com/"/>
       <outline text="Hacker News" title="Hacker News" type="rss" xmlUrl="https://news.ycombinator.com/rss" htmlUrl="https://news.ycombinator.com/"/>
     </outline>
