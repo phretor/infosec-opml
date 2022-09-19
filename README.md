@@ -4,6 +4,8 @@ This is my very personal and opinionatedly organized infosec/cybersec sources in
 
 Here's what you can expect to find in here, in a rough order of descending priority. Why normalized, flattened as opposed to nested folders? Because seme readers (e.g., the great Inoreader) don't support nested folders.
 
+## Folders
+
 - 📩 Infosec | Newsletter
 - 🔐 Infosec | Top
 - 📜 Infosec | Reporters
@@ -17,7 +19,7 @@ Here's what you can expect to find in here, in a rough order of descending prior
 - 🔬 Infosec | Research & Tech Blogs
 - 🚀 Infosec | Startups & Small Vendors
 - 🔊 Infosec | Conferences
-- 🤦‍Infosec | People
+- 🤦 Infosec | People
 - 📄 Infosec | Papers
 - 🌐 Infosec | Blogs
 - 🗞 Infosec | Generic News
@@ -36,6 +38,9 @@ Here's what you can expect to find in here, in a rough order of descending prior
 - Tech | News
 - Software | Operating Systems
 - Science
+- All Infosec Relevant
+
+The last folder contains *all* important feeds from previous folders. This just makes it easier to run queries on all relevant sources.
 
 ## Contributing
 
