@@ -215,6 +215,7 @@
       <outline text="Techxplore | Security News - Software vulnerabilities, data leaks, malware, viruses" title="Techxplore | Security News - Software vulnerabilities, data leaks, malware, viruses" type="rss" xmlUrl="https://techxplore.com/rss-feed/security-news/" htmlUrl="https://techxplore.com/security-news/"/>
       <outline text="Threatpost | The first stop for security news" title="Threatpost | The first stop for security news" type="rss" xmlUrl="http://threatpost.com/feed" htmlUrl="http://threatpost.com/"/>
       <outline text="ZDNet | security RSS" title="ZDNet | security RSS" type="rss" xmlUrl="https://www.zdnet.com/blog/security/rss.xml" htmlUrl="http://www.zdnet.com/"/>
+      <outline text="RestorePrivacy Blog" title="RestorePrivacy Blog" type="rss" xmlUrl="https://restoreprivacy.com/feed/" htmlUrl="https://restoreprivacy.com"/>
     </outline>
     <outline text="👩‍💻 Tech | Curated 2" title="👩‍💻 Tech | Curated 2">
       <outline text="Techmeme" title="Techmeme" type="rss" xmlUrl="http://www.techmeme.com/index.xml" htmlUrl="http://www.techmeme.com/"/>
@@ -340,6 +341,7 @@
       <outline text="ProtonMail Blog" title="ProtonMail Blog" type="rss" xmlUrl="https://protonmail.com/blog/feed/" htmlUrl="https://protonmail.com/blog"/>
       <outline text="ProtonVPN Blog" title="ProtonVPN Blog" type="rss" xmlUrl="https://protonvpn.com/blog/feed/" htmlUrl="https://protonvpn.com/blog"/>
       <outline text="Private Internet Access Blog" title="Private Internet Access Blog" type="rss" xmlUrl="https://www.privateinternetaccess.com/blog/feed/" htmlUrl="https://www.privateinternetaccess.com/blog"/>
+      <outline text="RestorePrivacy Blog" title="RestorePrivacy Blog" type="rss" xmlUrl="https://restoreprivacy.com/feed/" htmlUrl="https://restoreprivacy.com"/>
     </outline>
     <outline text="🏛 Tech | Top Companies" title="🏛 Tech | Top Companies">
       <outline text="The Netflix Tech Blog" title="The Netflix Tech Blog" type="rss" xmlUrl="http://techblog.netflix.com/feeds/posts/default" htmlUrl="http://techblog.netflix.com/"/>
