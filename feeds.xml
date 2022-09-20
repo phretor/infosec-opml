@@ -340,6 +340,7 @@
       <outline text="ProtonMail Blog" title="ProtonMail Blog" type="rss" xmlUrl="https://protonmail.com/blog/feed/" htmlUrl="https://protonmail.com/blog"/>
       <outline text="ProtonVPN Blog" title="ProtonVPN Blog" type="rss" xmlUrl="https://protonvpn.com/blog/feed/" htmlUrl="https://protonvpn.com/blog"/>
       <outline text="Private Internet Access Blog" title="Private Internet Access Blog" type="rss" xmlUrl="https://www.privateinternetaccess.com/blog/feed/" htmlUrl="https://www.privateinternetaccess.com/blog"/>
+      <outline text="RestorePrivacy Blog" title="RestorePrivacy Blog" type="rss" xmlUrl="https://restoreprivacy.com/feed/" htmlUrl="https://restoreprivacy.com"/>
     </outline>
     <outline text="🏛 Tech | Top Companies" title="🏛 Tech | Top Companies">
       <outline text="The Netflix Tech Blog" title="The Netflix Tech Blog" type="rss" xmlUrl="http://techblog.netflix.com/feeds/posts/default" htmlUrl="http://techblog.netflix.com/"/>
