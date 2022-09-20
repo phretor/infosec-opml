@@ -215,6 +215,7 @@
       <outline text="Techxplore | Security News - Software vulnerabilities, data leaks, malware, viruses" title="Techxplore | Security News - Software vulnerabilities, data leaks, malware, viruses" type="rss" xmlUrl="https://techxplore.com/rss-feed/security-news/" htmlUrl="https://techxplore.com/security-news/"/>
       <outline text="Threatpost | The first stop for security news" title="Threatpost | The first stop for security news" type="rss" xmlUrl="http://threatpost.com/feed" htmlUrl="http://threatpost.com/"/>
       <outline text="ZDNet | security RSS" title="ZDNet | security RSS" type="rss" xmlUrl="https://www.zdnet.com/blog/security/rss.xml" htmlUrl="http://www.zdnet.com/"/>
+      <outline text="RestorePrivacy Blog" title="RestorePrivacy Blog" type="rss" xmlUrl="https://restoreprivacy.com/feed/" htmlUrl="https://restoreprivacy.com"/>
     </outline>
     <outline text="👩‍💻 Tech | Curated 2" title="👩‍💻 Tech | Curated 2">
       <outline text="Techmeme" title="Techmeme" type="rss" xmlUrl="http://www.techmeme.com/index.xml" htmlUrl="http://www.techmeme.com/"/>
