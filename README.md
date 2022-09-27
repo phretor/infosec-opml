@@ -58,6 +58,7 @@ Contributions are welcomed, so feel free to fork and send pull requests. I'll ad
   <tbody>
     <tr>
       <td align="center"><a href="https://github.com/glaucusec"><img src="https://avatars.githubusercontent.com/u/67792905?v=4" width="100px;" alt=""/><br /><sub><b>Abhishek</b></sub></a><br />✅</a></td>
+      <td align="center"><a href="https://diablohorn.com">DiabloHorn</a></td>
     </tr>
   </tbody>
 </table>
