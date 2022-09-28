@@ -198,6 +198,7 @@
       <outline text="ceres-c" title="ceres-c" type="rss" xmlUrl="https://ceres-c.it/feed.xml" htmlUrl="https://ceres-c.it/"/>
       <outline text="Carnal0wnage &amp; Attack Research Blog" title="Carnal0wnage &amp; Attack Research Blog" type="rss" xmlUrl="http://carnal0wnage.blogspot.com/feeds/posts/default" htmlUrl="http://carnal0wnage.attackresearch.com/"/>
       <outline text="Secjuice.com" title="Secjuice.com" type="rss" xmlUrl="https://www.secjuice.com/rss/" htmlUrl="https://www.secjuice.com/"/>
+      <outline text="diablohorn.com" title="diablohorn.com" type="rss" xmlUrl="https://diablohorn.com/rss/" htmlUrl="https://diablohorn.com/"/>
     </outline>
     <outline text="🗞 Infosec | Generic News" title="🗞 Infosec | Generic News">
       <outline text="The Register - Security" title="The Register - Security" type="rss" xmlUrl="http://www.theregister.co.uk/security/headlines.atom" htmlUrl="http://www.theregister.co.uk/security/"/>
@@ -569,6 +570,7 @@
       <outline text="RIPE Labs" title="RIPE Labs" type="rss" xmlUrl="https://labs.ripe.net/RSS" htmlUrl="https://labs.ripe.net/site-rss"/>
       <outline text="SlashdotSlashdotSearch Slashdot" title="SlashdotSlashdotSearch Slashdot" type="rss" xmlUrl="http://rss.slashdot.org/Slashdot/slashdotMain" htmlUrl="http://slashdot.org/"/>
       <outline text="The Keyword" title="The Keyword" type="rss" xmlUrl="https://www.blog.google/rss/" htmlUrl="https://www.blog.google/"/>
+      <outline text="diablohorn.com" title="diablohorn.com" type="rss" xmlUrl="https://diablohorn.com/rss/" htmlUrl="https://diablohorn.com/"/>
     </outline>
   </body>
 </opml>
