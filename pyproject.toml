@@ -1,0 +1,11 @@
+[project]
+name = "infosec-opml"
+version = "0.1.0"
+description = "Curated collection of infosec RSS/Atom feeds in OPML format"
+requires-python = ">=3.12"
+dependencies = ["requests>=2.31"]
+
+[project.scripts]
+feeds-check = "scripts.check_feeds:main"
+feeds-add = "scripts.add_feeds:main"
+feeds-stats = "scripts.stats:main"
