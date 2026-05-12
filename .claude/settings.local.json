@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xmllint --noout feeds.xml)",
+      "Bash(uv run *)",
+      "Bash(git add *)"
+    ]
+  }
+}

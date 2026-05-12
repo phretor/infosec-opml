@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-04-24
+
+### Changed
+- Restructured folder taxonomy from 33 source-type folders to 14 topic-oriented folders
+- Folder assignment now driven by content topic, not org type (vendor/enterprise/startup distinctions removed)
+- High-frequency sources quarantined into `Alerts & Advisories` and `News & Media` to avoid drowning topic folders
+- Old catch-all `🌐 Infosec | Blogs` (119 entries) dissolved; feeds redistributed by topic; `General & Mixed` replaces it with 24 entries
+
+### Added
+- `AGENTS.md` pointing to `CLAUDE.md` for agent compatibility
+- `.claude/commands/classify-feeds.md` — Claude Code skill that fetches 3 articles per feed and proposes folder classification using Haiku
+- `scripts/classify_feeds.py` — feed classification script (used by the skill)
+- `scripts/check_feeds.py` — improved with `--remove` / `--remove-all` flags and dead-vs-transient error classification
+- New feeds: Calif (`blog.calif.io`), Joe T. Sylve Ph.D. (`jtsylve.blog`), devansh (`devansh.bearblog.dev`)
+
+### Net result
+- 438 feeds across 14 folders (was 435 across 33)
+
 ## 2026-03-21
 
 Major cleanup and expansion of the feed collection.

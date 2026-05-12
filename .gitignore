@@ -1,3 +1,4 @@
 *.bak
 __pycache__/
 .venv/
+.cache/
