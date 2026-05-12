@@ -1,6 +1,6 @@
 # Information and Cyber Security RSS/Atom Feeds
 
-A curated collection of ~440 information security and cybersecurity RSS/Atom feeds organized in a single OPML file. Designed for import into any RSS reader (tested with [Inoreader](https://www.inoreader.com)).
+A curated collection of ~438 information security and cybersecurity RSS/Atom feeds organized in a single OPML file. Designed for import into any RSS reader (tested with [Inoreader](https://www.inoreader.com)).
 
 Maintained by [Federico Maggi](https://github.com/phretor) (@phretor).
 
@@ -10,43 +10,28 @@ Import `feeds.xml` into your RSS reader. That's it.
 
 ## Folders
 
-Feeds are organized into flat (non-nested) folders with emoji prefixes for visual categorization. Flat structure is intentional — some readers (e.g., Inoreader) don't support nested folders.
+Feeds are organized into 14 flat topic-oriented folders. Flat structure is intentional — some readers (e.g., Inoreader) don't support nested folders.
 
-| Folder | Description |
+Folders are ordered: fast-skim tier first, then topic tier, then slow-read tier.
+
+| Folder | What's in it |
 |--------|-------------|
-| 📩 Infosec \| Newsletter | Curated security newsletters and digests |
-| 🔐 Infosec \| Top | Essential reads — Krebs, Schneier, BleepingComputer, Dark Reading, etc. |
-| 🧩 Malware \| Capabilities | Malware analysis tooling (capa, MBC) |
-| 🐦 Infosec \| Reddits | Security-related subreddits |
-| 🔏 Infosec \| Curated | Hand-picked curated sources |
-| 💰 Infosec \| Breaches | Breach notifications and tracking |
-| 💎 Infosec \| Boutiques | Security boutique firms and research labs |
-| 🔬 Infosec \| Research & Tech Blogs | Vendor and independent security research |
-| 🚀 Infosec \| Startups & Small Vendors | Emerging security companies |
-| 🔊 Infosec \| Conferences | Security conference news |
-| 🤦‍♂️ Infosec \| People 2 | Individual security researchers and bloggers |
-| 📄 Infosec \| Papers | Academic journals and preprints (IEEE, ACM, arXiv) |
-| 🌐 Infosec \| Blogs | Broad collection of security blogs |
-| 🗞 Infosec \| Generic News | General security news outlets |
-| 👩‍💻 Tech \| Curated 2 | Curated tech aggregators (Techmeme, HN) |
-| ℹ ISACs | Information Sharing and Analysis Centers |
-| 💻 Coding 2 | Developer-focused feeds (GitHub) |
-| 🎯 Infosec \| Communities | Security community sites and mailing lists |
-| ⚔️ Infosec \| Orgs & No-profits | EFF, OWASP, ISRG, Let's Encrypt |
-| 🚔 Infosec \| LEA, GOV, CERT | Government CERTs, law enforcement, NIST |
-| 👾 Infosec \| Hardware | Firmware and hardware security |
-| ◀️ Infosec \| Reversing | Reverse engineering blogs and tools |
-| 🏦 Trend Micro Blogs | Trend Micro research |
-| 🏢 Infosec \| Enterprises | Large security vendor blogs |
-| 🆘 Infosec \| Alerts and Advisories | CISA, NVD, vendor advisories |
-| 🔒 Infosec \| Privacy | Privacy-focused tools and news |
-| 🏛 Tech \| Top Companies | Major tech company blogs |
-| 🔎 Investigative Journals | Investigative journalism (ProPublica, ICIJ, The Intercept) |
-| 📟 Hardware & IoT | IoT, embedded systems, SDR |
-| Infosec \| Feeds | Exploit databases and vulnerability feeds |
-| Tech \| News | General technology news |
-| Software \| Operating Systems | OS releases and updates |
-| Science | Science news |
+| Alerts & Advisories | CERTs, CISA, patch advisories, CVE feeds |
+| News & Media | Journalism, news aggregators, general tech media |
+| Exploitation & Vuln Research | CVE analysis, PoC, pre-auth RCEs, exploit chain research |
+| Malware & Threat Intel | Malware analysis, CTI, threat actors, ransomware, dark web |
+| Reverse Engineering | Binary analysis, disassembly, deobfuscation, RE tooling |
+| Offensive Security | Red team, C2, pentesting TTPs, adversary simulation |
+| Cloud & Supply Chain | Cloud infra security, containers, k8s, CI/CD, dependency attacks |
+| Hardware, Embedded & ICS | Firmware, IoT, OT/SCADA, RF, hardware hacking |
+| Cryptography & Privacy | TLS, PKI, PQC, digital rights, identity, data protection |
+| Forensics & Incident Response | DFIR, memory forensics, threat hunting, IR tooling |
+| Application Security | Web vulns, SAST, API security, secure dev, LLM security |
+| Research & Papers | arXiv cs.CR, IEEE, ACM, academic journals |
+| Newsletters & Digests | Curated weekly/periodic digests and newsletters |
+| General & Mixed | Personal blogs spanning multiple topics |
+
+**Assignment rule:** folder is determined by topic, not source type. A vendor blog and a solo researcher publishing malware analysis both belong in Malware & Threat Intel.
 
 ## Maintenance
 
@@ -75,7 +60,7 @@ uv run python -m scripts.add_feeds --list-folders
 
 ## Contributing
 
-Contributions are welcomed — fork and send pull requests. New feeds should be placed in the appropriate existing category folder.
+Contributions are welcomed — fork and send pull requests. New feeds should be placed in the appropriate topic folder. If unsure, run `/classify-feeds <url>` in Claude Code to get a placement suggestion.
 
 ## Credits
 
