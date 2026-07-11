@@ -5,7 +5,6 @@
   </head>
   <body>
     <outline text="Alerts &amp; Advisories" title="Alerts &amp; Advisories">
-      <outline text="" title="" type="rss" xmlUrl="https://cert.be/en/rss" htmlUrl="https://cert.be/en/rss" />
       <outline text="Alerts" title="Alerts" type="rss" xmlUrl="https://cyber.gc.ca/webservice/en/rss/alerts" htmlUrl="https://www.cyber.gc.ca/webservice/en/rss/alerts" />
       <outline text="all feeds" title="all feeds" type="rss" xmlUrl="https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml" htmlUrl="https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml" />
       <outline text="Australian Information Security Awareness and Advisory" title="Australian Information Security Awareness and Advisory" type="rss" xmlUrl="https://kirbyidau.com/feed/" htmlUrl="https://kirbyidau.com/" />
@@ -13,7 +12,6 @@
       <outline text="Center for Internet Security - Multi-State Information Sharing and Analysis Center" title="Center for Internet Security - Multi-State Information Sharing and Analysis Center" type="rss" xmlUrl="https://www.cisecurity.org/feed/advisories" htmlUrl="https://www.cisecurity.org" />
       <outline text="CERT Polska" title="CERT Polska" type="rss" xmlUrl="https://www.cert.pl/en/feed/" htmlUrl="https://www.cert.pl/en" />
       <outline text="CERT.at - Blog" title="CERT.at - Blog" type="rss" xmlUrl="https://cert.at/cert-at.en.blog.rss_2.0.xml" htmlUrl="https://cert.at/" />
-      <outline text="CERT.LV" title="CERT.LV" type="rss" xmlUrl="https://cert.lv/en/feed/rss/all" htmlUrl="https://cert.lv/" />
       <outline text="CISA All NCAS Products" title="CISA All NCAS Products" type="rss" xmlUrl="https://www.cisa.gov/uscert/ncas/all.xml" htmlUrl="https://us-cert.cisa.gov/" />
       <outline text="CVE | THREATINT - NEW" title="CVE | THREATINT - NEW" type="rss" xmlUrl="https://cve.threatint.com/rss/new" htmlUrl="https://cve.threatint.com" />
       <outline text="Duo Security Bulletin" title="Duo Security Bulletin" type="rss" xmlUrl="https://duo.com/feed" htmlUrl="https://duo.com/" />
@@ -29,11 +27,6 @@
       <outline text="kyberturvallisuuskeskus.fi RSS" title="kyberturvallisuuskeskus.fi RSS" type="rss" xmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en/399" htmlUrl="https://kyberturvallisuuskeskus.fi/feed/rss/en/399" />
       <outline text="Latest Bulletins" title="Latest Bulletins" type="rss" xmlUrl="https://aws.amazon.com/security/security-bulletins/rss/feed/" htmlUrl="https://aws.amazon.com/security/security-bulletins/rss/" />
       <outline text="Latest Linux Kernel Versions" title="Latest Linux Kernel Versions" type="rss" xmlUrl="https://www.kernel.org/feeds/kdist.xml" htmlUrl="http://www.kernel.org/" />
-      <outline text="LinuxSecurity Advisories - Debian" title="LinuxSecurity Advisories - Debian" type="rss" xmlUrl="https://linuxsecurity.com/advisories/debian?format=feed&amp;type=rss" htmlUrl="https://linuxsecurity.com/advisories/debian" />
-      <outline text="LinuxSecurity Advisories - Oracle" title="LinuxSecurity Advisories - Oracle" type="rss" xmlUrl="https://linuxsecurity.com/advisories/oracle?format=feed&amp;type=rss" htmlUrl="https://linuxsecurity.com/advisories/oracle" />
-      <outline text="LinuxSecurity Advisories - Red Hat" title="LinuxSecurity Advisories - Red Hat" type="rss" xmlUrl="https://linuxsecurity.com/advisories/red-hat?format=feed&amp;type=rss" htmlUrl="https://linuxsecurity.com/advisories/red-hat" />
-      <outline text="LinuxSecurity Advisories - Slackware" title="LinuxSecurity Advisories - Slackware" type="rss" xmlUrl="https://linuxsecurity.com/advisories/slackware?format=feed&amp;type=rss" htmlUrl="https://linuxsecurity.com/advisories/slackware" />
-      <outline text="LinuxSecurity Advisories - Ubuntu" title="LinuxSecurity Advisories - Ubuntu" type="rss" xmlUrl="https://linuxsecurity.com/advisories/ubuntu?format=feed&amp;type=rss" htmlUrl="https://linuxsecurity.com/advisories/ubuntu" />
       <outline text="NCSC Site" title="NCSC Site" type="rss" xmlUrl="https://www.ncsc.gov.uk/feeds/alerts-and-advisories.xml" htmlUrl="https://www.ncsc.gov.uk/feeds/alerts-and-advisories.xml" />
       <outline text="NCSC-FI daily news followup" title="NCSC-FI daily news followup" type="rss" xmlUrl="https://www.kyberturvallisuuskeskus.fi/sites/default/files/rss/news.xml" htmlUrl="https://ncsc.fi/" />
       <outline text="NCSC-FI vulnerabilities summary" title="NCSC-FI vulnerabilities summary" type="rss" xmlUrl="https://www.kyberturvallisuuskeskus.fi/sites/default/files/rss/vulns.xml" htmlUrl="https://ncsc.fi/" />
@@ -162,7 +155,6 @@
       <outline text="Techmeme" title="Techmeme" type="rss" xmlUrl="https://www.techmeme.com/index.xml" htmlUrl="http://www.techmeme.com/" />
       <outline text="Technology News - The Washington Post" title="Technology News - The Washington Post" type="rss" xmlUrl="http://feeds.washingtonpost.com/rss/business/technology" htmlUrl="http://www.washingtonpost.com/business/technology?wprss=rss_technology" />
       <outline text="TechSpot" title="TechSpot" type="rss" xmlUrl="https://www.techspot.com/backend.xml" htmlUrl="https://www.techspot.com" />
-      <outline text="Techxplore | Security News - Software vulnerabilities, data leaks, malware, viruses" title="Techxplore | Security News - Software vulnerabilities, data leaks, malware, viruses" type="rss" xmlUrl="https://techxplore.com/rss-feed/security-news/" htmlUrl="https://techxplore.com/security-news/" />
       <outline text="The Cybersecurity Pulse (TCP)" title="The Cybersecurity Pulse (TCP)" type="rss" xmlUrl="https://www.cybersecuritypulse.net/feed" htmlUrl="https://www.cybersecuritypulse.net" />
       <outline text="The Hacker News" title="The Hacker News" type="rss" xmlUrl="https://feeds.feedburner.com/TheHackersNews" htmlUrl="https://thehackernews.com/" />
       <outline text="The Intercept" title="The Intercept" type="rss" xmlUrl="https://theintercept.com/feed/?lang=en" htmlUrl="https://theintercept.com/" />
@@ -333,7 +325,6 @@
     </outline>
     <outline text="Hardware, Embedded &amp; ICS" title="Hardware, Embedded &amp; ICS">
       <outline text="//scadas.ec" title="//scadas.ec" type="rss" xmlUrl="http://scadamag.infracritical.com/index.php/feed/" htmlUrl="http://scadamag.infracritical.com/" />
-      <outline text="Alerts – Kaspersky Lab ICS CERT" title="Alerts – Kaspersky Lab ICS CERT" type="rss" xmlUrl="https://ics-cert.kaspersky.com/category/alerts/feed/" htmlUrl="https://ics-cert.kaspersky.com/" />
       <outline text="Arduino Blog" title="Arduino Blog" type="rss" xmlUrl="https://blog.arduino.cc/feed/" htmlUrl="https://blog.arduino.cc/" />
       <outline text="AV-TEST Internet of Things Security Testing Blog" title="AV-TEST Internet of Things Security Testing Blog" type="rss" xmlUrl="https://www.iot-tests.org/feed/" htmlUrl="https://www.iot-tests.org/" />
       <outline text="ceres-c" title="ceres-c" type="rss" xmlUrl="https://ceres-c.it/feed.xml" htmlUrl="https://ceres-c.it/" />
