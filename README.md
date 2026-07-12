@@ -1,6 +1,6 @@
 # Information and Cyber Security RSS/Atom Feeds
 
-A curated collection of ~438 information security and cybersecurity RSS/Atom feeds organized in a single OPML file. Designed for import into any RSS reader (tested with [Inoreader](https://www.inoreader.com)).
+A curated collection of ~460 information security and cybersecurity RSS/Atom feeds organized in a single OPML file. Designed for import into any RSS reader (tested with [Inoreader](https://www.inoreader.com)).
 
 Maintained by [Federico Maggi](https://github.com/phretor) (@phretor).
 

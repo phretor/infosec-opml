@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-11
+
+### Removed
+- 9 dead vulnerability/advisory feeds (404/DNS failures)
+- 12 more dead feeds across all folders; updated Sophos feed URL
+
+### Added
+- 45 new feeds sourced from personal Obsidian vault bookmarks
+- Infosec: abuse.ch, Gemini Advisory, Intezer, Curated Intelligence, Intel 471, Nextron Systems, Ulf Frisk, Grapl Security, Security Breached, RedHunt Labs, VoidSec, polarply, Shielder, Tamir Zahavi-Brunner, LeakIX, Malcat, Ken Shirriff's Blog, Comsecuris, bunnie's blog, Purism, CyberArk, SonarSource Blog, Parsiya.net, The Hacker News, DoublePulsar
+- General/non-infosec: Oxide Computer, Raspberry Pi, Julia Evans, Drew DeVault, BBC Technology, Phys.org, and others
+
+### Net result
+- 461 feeds across 14 folders (was 438)
+
 ## 2026-04-24
 
 ### Changed
