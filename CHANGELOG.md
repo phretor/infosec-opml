@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-18
+
+### Changed
+- Reverted 14-topic taxonomy back to source-type folders (26 folders with emoji prefixes)
+- Synced feeds.xml from Papr database (362 feeds)
+- Renamed `Infosec` folders to `Security`, merged Trend Micro Blogs into Enterprises
+- Added folders: AI, Distro, GitHub, Science
+- Restored pretty-printed XML with `title` and `htmlUrl` attributes on all feeds
+
+### Net result
+- 362 feeds across 26 folders
+
 ## 2026-07-11
 
 ### Removed
@@ -8,8 +20,6 @@
 
 ### Added
 - 45 new feeds sourced from personal Obsidian vault bookmarks
-- Infosec: abuse.ch, Gemini Advisory, Intezer, Curated Intelligence, Intel 471, Nextron Systems, Ulf Frisk, Grapl Security, Security Breached, RedHunt Labs, VoidSec, polarply, Shielder, Tamir Zahavi-Brunner, LeakIX, Malcat, Ken Shirriff's Blog, Comsecuris, bunnie's blog, Purism, CyberArk, SonarSource Blog, Parsiya.net, The Hacker News, DoublePulsar
-- General/non-infosec: Oxide Computer, Raspberry Pi, Julia Evans, Drew DeVault, BBC Technology, Phys.org, and others
 
 ### Net result
 - 461 feeds across 14 folders (was 438)
@@ -18,16 +28,12 @@
 
 ### Changed
 - Restructured folder taxonomy from 33 source-type folders to 14 topic-oriented folders
-- Folder assignment now driven by content topic, not org type (vendor/enterprise/startup distinctions removed)
-- High-frequency sources quarantined into `Alerts & Advisories` and `News & Media` to avoid drowning topic folders
-- Old catch-all `🌐 Infosec | Blogs` (119 entries) dissolved; feeds redistributed by topic; `General & Mixed` replaces it with 24 entries
+- Folder assignment now driven by content topic, not org type
+- High-frequency sources quarantined into `Alerts & Advisories` and `News & Media`
 
 ### Added
-- `AGENTS.md` pointing to `CLAUDE.md` for agent compatibility
-- `.claude/commands/classify-feeds.md` — Claude Code skill that fetches 3 articles per feed and proposes folder classification using Haiku
-- `scripts/classify_feeds.py` — feed classification script (used by the skill)
-- `scripts/check_feeds.py` — improved with `--remove` / `--remove-all` flags and dead-vs-transient error classification
-- New feeds: Calif (`blog.calif.io`), Joe T. Sylve Ph.D. (`jtsylve.blog`), devansh (`devansh.bearblog.dev`)
+- `scripts/classify_feeds.py`, improved `check_feeds.py`
+- New feeds: Calif, Joe T. Sylve Ph.D., devansh
 
 ### Net result
 - 438 feeds across 14 folders (was 435 across 33)

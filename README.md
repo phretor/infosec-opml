@@ -1,6 +1,8 @@
 # Information and Cyber Security RSS/Atom Feeds
 
-A curated collection of ~460 information security and cybersecurity RSS/Atom feeds organized in a single OPML file. Designed for import into any RSS reader (tested with [Inoreader](https://www.inoreader.com)).
+A curated collection of ~360 information security and cybersecurity RSS/Atom feeds organized in a
+single OPML file. Designed for import into any RSS reader (tested with
+[Inoreader](https://www.inoreader.com)).
 
 Maintained by [Federico Maggi](https://github.com/phretor) (@phretor).
 
@@ -10,28 +12,36 @@ Import `feeds.xml` into your RSS reader. That's it.
 
 ## Folders
 
-Feeds are organized into 14 flat topic-oriented folders. Flat structure is intentional — some readers (e.g., Inoreader) don't support nested folders.
+Feeds are organized into flat (non-nested) folders with emoji prefixes for visual categorization. Flat structure is intentional -- some readers (e.g., Inoreader) don't support nested folders.
 
-Folders are ordered: fast-skim tier first, then topic tier, then slow-read tier.
-
-| Folder | What's in it |
+| Folder | Description |
 |--------|-------------|
-| Alerts & Advisories | CERTs, CISA, patch advisories, CVE feeds |
-| News & Media | Journalism, news aggregators, general tech media |
-| Exploitation & Vuln Research | CVE analysis, PoC, pre-auth RCEs, exploit chain research |
-| Malware & Threat Intel | Malware analysis, CTI, threat actors, ransomware, dark web |
-| Reverse Engineering | Binary analysis, disassembly, deobfuscation, RE tooling |
-| Offensive Security | Red team, C2, pentesting TTPs, adversary simulation |
-| Cloud & Supply Chain | Cloud infra security, containers, k8s, CI/CD, dependency attacks |
-| Hardware, Embedded & ICS | Firmware, IoT, OT/SCADA, RF, hardware hacking |
-| Cryptography & Privacy | TLS, PKI, PQC, digital rights, identity, data protection |
-| Forensics & Incident Response | DFIR, memory forensics, threat hunting, IR tooling |
-| Application Security | Web vulns, SAST, API security, secure dev, LLM security |
-| Research & Papers | arXiv cs.CR, IEEE, ACM, academic journals |
-| Newsletters & Digests | Curated weekly/periodic digests and newsletters |
-| General & Mixed | Personal blogs spanning multiple topics |
-
-**Assignment rule:** folder is determined by topic, not source type. A vendor blog and a solo researcher publishing malware analysis both belong in Malware & Threat Intel.
+| 📩 Security \| Newsletter | Curated security newsletters and digests |
+| 🔐 Security \| Top | Essential reads -- Krebs, Schneier, BleepingComputer, Dark Reading, etc. |
+| 💰 Security \| Breaches | Breach notifications and tracking |
+| 🚀 Security \| Companies | Security company blogs |
+| 🔊 Security \| Conferences | Security conference news |
+| 🤦‍♂️ Security \| People | Individual security researchers and bloggers |
+| 📄 Security \| Papers | Academic journals and preprints (IEEE, ACM, arXiv) |
+| 🌐 Security \| Blogs | Broad collection of security blogs |
+| 🗞 Security \| Generic News | General security news outlets |
+| 🎯 Security \| Communities | Security community sites and mailing lists |
+| ⚔️ Security \| Orgs & No-profits | EFF, OWASP, ISRG, Let's Encrypt |
+| 🚔 Security \| LEA, GOV, CERT | Government CERTs, law enforcement |
+| 👾 Security \| Hardware | Firmware and hardware security |
+| ◀️ Security \| Reversing | Reverse engineering blogs and tools |
+| 🏢 Security \| Enterprises | Large security vendor blogs |
+| 🆘 Security \| Alerts and Advisories | CISA, vendor advisories, CVE feeds |
+| 🔒 Security \| Privacy | Privacy-focused tools and news |
+| 🏛 Tech \| Top Companies | Major tech company blogs |
+| 👩‍💻 Tech \| Curated 2 | Curated tech aggregators (Techmeme, HN) |
+| 💻 Coding 2 | Developer-focused feeds (GitHub) |
+| 📟 Hardware & IoT | IoT, embedded systems, SDR |
+| Tech \| News | General technology news |
+| AI | AI labs and research (OpenAI, Anthropic, Hugging Face) |
+| Distro | Linux distribution news (Debian, Ubuntu) |
+| GitHub | GitHub trending repositories |
+| Science | Science news |
 
 ## Maintenance
 
@@ -49,10 +59,10 @@ uv run python -m scripts.add_feeds \
   --name "Example Blog" \
   --xml-url "https://example.com/feed" \
   --html-url "https://example.com" \
-  --folder "🌐 Infosec | Blogs"
+  --folder "🌐 Security | Blogs"
 
 # Bulk import from another OPML file
-uv run python -m scripts.add_feeds --from-opml other.opml --target-folder "🌐 Infosec | Blogs"
+uv run python -m scripts.add_feeds --from-opml other.opml --target-folder "🌐 Security | Blogs"
 
 # List available folders
 uv run python -m scripts.add_feeds --list-folders
@@ -60,7 +70,7 @@ uv run python -m scripts.add_feeds --list-folders
 
 ## Contributing
 
-Contributions are welcomed — fork and send pull requests. New feeds should be placed in the appropriate topic folder. If unsure, run `/classify-feeds <url>` in Claude Code to get a placement suggestion.
+Contributions are welcomed -- fork and send pull requests. New feeds should be placed in the appropriate existing category folder.
 
 ## Credits
 
