@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-08-18
+
+### Changed
+- Synced feeds.xml from Papr database (362 feeds, 26 folders)
+- Renamed `Infosec` folders to `Security`, merged Trend Micro Blogs into Enterprises
+- Removed empty folders: Malware | Capabilities, ISACs, Reddits, Curated, Boutiques, Research & Tech Blogs, Investigative Journals, Feeds, Software | Operating Systems
+- Added folders: AI, Distro, GitHub, Science
+- Restored pretty-printed XML with `title` and `htmlUrl` attributes on all feeds
+
+### Net result
+- 362 feeds across 26 folders
+
 ## 2026-03-21
 
 Major cleanup and expansion of the feed collection.

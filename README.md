@@ -1,6 +1,8 @@
 # Information and Cyber Security RSS/Atom Feeds
 
-A curated collection of ~440 information security and cybersecurity RSS/Atom feeds organized in a single OPML file. Designed for import into any RSS reader (tested with [Inoreader](https://www.inoreader.com)).
+A curated collection of ~360 information security and cybersecurity RSS/Atom feeds organized in a
+single OPML file. Designed for import into any RSS reader (tested with
+[Inoreader](https://www.inoreader.com)).
 
 Maintained by [Federico Maggi](https://github.com/phretor) (@phretor).
 
@@ -14,38 +16,31 @@ Feeds are organized into flat (non-nested) folders with emoji prefixes for visua
 
 | Folder | Description |
 |--------|-------------|
-| 📩 Infosec \| Newsletter | Curated security newsletters and digests |
-| 🔐 Infosec \| Top | Essential reads — Krebs, Schneier, BleepingComputer, Dark Reading, etc. |
-| 🧩 Malware \| Capabilities | Malware analysis tooling (capa, MBC) |
-| 🐦 Infosec \| Reddits | Security-related subreddits |
-| 🔏 Infosec \| Curated | Hand-picked curated sources |
-| 💰 Infosec \| Breaches | Breach notifications and tracking |
-| 💎 Infosec \| Boutiques | Security boutique firms and research labs |
-| 🔬 Infosec \| Research & Tech Blogs | Vendor and independent security research |
-| 🚀 Infosec \| Startups & Small Vendors | Emerging security companies |
-| 🔊 Infosec \| Conferences | Security conference news |
-| 🤦‍♂️ Infosec \| People 2 | Individual security researchers and bloggers |
-| 📄 Infosec \| Papers | Academic journals and preprints (IEEE, ACM, arXiv) |
-| 🌐 Infosec \| Blogs | Broad collection of security blogs |
-| 🗞 Infosec \| Generic News | General security news outlets |
-| 👩‍💻 Tech \| Curated 2 | Curated tech aggregators (Techmeme, HN) |
-| ℹ ISACs | Information Sharing and Analysis Centers |
-| 💻 Coding 2 | Developer-focused feeds (GitHub) |
-| 🎯 Infosec \| Communities | Security community sites and mailing lists |
-| ⚔️ Infosec \| Orgs & No-profits | EFF, OWASP, ISRG, Let's Encrypt |
-| 🚔 Infosec \| LEA, GOV, CERT | Government CERTs, law enforcement, NIST |
-| 👾 Infosec \| Hardware | Firmware and hardware security |
-| ◀️ Infosec \| Reversing | Reverse engineering blogs and tools |
-| 🏦 Trend Micro Blogs | Trend Micro research |
-| 🏢 Infosec \| Enterprises | Large security vendor blogs |
-| 🆘 Infosec \| Alerts and Advisories | CISA, NVD, vendor advisories |
-| 🔒 Infosec \| Privacy | Privacy-focused tools and news |
+| 📩 Security \| Newsletter | Curated security newsletters and digests |
+| 🔐 Security \| Top | Essential reads -- Krebs, Schneier, BleepingComputer, Dark Reading, etc. |
+| 💰 Security \| Breaches | Breach notifications and tracking |
+| 🚀 Security \| Companies | Security company blogs |
+| 🔊 Security \| Conferences | Security conference news |
+| 🤦‍♂️ Security \| People | Individual security researchers and bloggers |
+| 📄 Security \| Papers | Academic journals and preprints (IEEE, ACM, arXiv) |
+| 🌐 Security \| Blogs | Broad collection of security blogs |
+| 🗞 Security \| Generic News | General security news outlets |
+| 🎯 Security \| Communities | Security community sites and mailing lists |
+| ⚔️ Security \| Orgs & No-profits | EFF, OWASP, ISRG, Let's Encrypt |
+| 🚔 Security \| LEA, GOV, CERT | Government CERTs, law enforcement |
+| 👾 Security \| Hardware | Firmware and hardware security |
+| ◀️ Security \| Reversing | Reverse engineering blogs and tools |
+| 🏢 Security \| Enterprises | Large security vendor blogs |
+| 🆘 Security \| Alerts and Advisories | CISA, vendor advisories, CVE feeds |
+| 🔒 Security \| Privacy | Privacy-focused tools and news |
 | 🏛 Tech \| Top Companies | Major tech company blogs |
-| 🔎 Investigative Journals | Investigative journalism (ProPublica, ICIJ, The Intercept) |
+| 👩‍💻 Tech \| Curated 2 | Curated tech aggregators (Techmeme, HN) |
+| 💻 Coding 2 | Developer-focused feeds (GitHub) |
 | 📟 Hardware & IoT | IoT, embedded systems, SDR |
-| Infosec \| Feeds | Exploit databases and vulnerability feeds |
 | Tech \| News | General technology news |
-| Software \| Operating Systems | OS releases and updates |
+| AI | AI labs and research (OpenAI, Anthropic, Hugging Face) |
+| Distro | Linux distribution news (Debian, Ubuntu) |
+| GitHub | GitHub trending repositories |
 | Science | Science news |
 
 ## Maintenance
@@ -64,10 +59,10 @@ uv run python -m scripts.add_feeds \
   --name "Example Blog" \
   --xml-url "https://example.com/feed" \
   --html-url "https://example.com" \
-  --folder "🌐 Infosec | Blogs"
+  --folder "🌐 Security | Blogs"
 
 # Bulk import from another OPML file
-uv run python -m scripts.add_feeds --from-opml other.opml --target-folder "🌐 Infosec | Blogs"
+uv run python -m scripts.add_feeds --from-opml other.opml --target-folder "🌐 Security | Blogs"
 
 # List available folders
 uv run python -m scripts.add_feeds --list-folders
