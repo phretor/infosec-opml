@@ -3,14 +3,14 @@
 ## 2026-08-18
 
 ### Changed
-- Reverted 14-topic taxonomy back to source-type folders (26 folders with emoji prefixes)
-- Synced feeds.xml from Papr database (362 feeds)
-- Renamed `Infosec` folders to `Security`, merged Trend Micro Blogs into Enterprises
-- Added folders: AI, Distro, GitHub, Science
-- Restored pretty-printed XML with `title` and `htmlUrl` attributes on all feeds
+- Exported the reconciled live Miniflux inventory into `feeds.xml`
+- Replaced the 26-folder source-type layout with 17 action-oriented folders plus a temporary Review Queue
+- Added numeric folder prefixes so alphabetical readers preserve the intended triage-to-context workflow
+- Classified every existing subscription into exactly one destination; retained five repair/review candidates in `00 🧪 Review Queue`
+- Removed four repository-only subscriptions while reconciling to the 358-feed Miniflux inventory
 
 ### Net result
-- 362 feeds across 26 folders
+- 358 feeds across 18 flat folders
 
 ## 2026-07-11
 

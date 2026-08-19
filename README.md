@@ -1,7 +1,8 @@
 # Information and Cyber Security RSS/Atom Feeds
 
-A curated collection of ~360 information security and cybersecurity RSS/Atom feeds organized in a
-single OPML file. Designed for import into any RSS reader (tested with
+A curated collection of 358 information security, cybersecurity, technology, and research RSS/Atom
+feeds organized in a single OPML file. The taxonomy is ordered by reading action and urgency and is
+designed for import into any RSS reader (tested with
 [Inoreader](https://www.inoreader.com)).
 
 Maintained by [Federico Maggi](https://github.com/phretor) (@phretor).
@@ -12,40 +13,37 @@ Import `feeds.xml` into your RSS reader. That's it.
 
 ## Folders
 
-Feeds are organized into flat (non-nested) folders with emoji prefixes for visual categorization. Flat structure is intentional -- some readers (e.g., Inoreader) don't support nested folders.
+Feeds are organized into 17 permanent, flat folders plus a temporary review queue. Numeric prefixes
+make readers that sort folders alphabetically preserve the intended workflow. The flat structure is
+intentional because some readers do not support nested folders.
 
 | Folder | Description |
 |--------|-------------|
-| 📩 Security \| Newsletter | Curated security newsletters and digests |
-| 🔐 Security \| Top | Essential reads -- Krebs, Schneier, BleepingComputer, Dark Reading, etc. |
-| 💰 Security \| Breaches | Breach notifications and tracking |
-| 🚀 Security \| Companies | Security company blogs |
-| 🔊 Security \| Conferences | Security conference news |
-| 🤦‍♂️ Security \| People | Individual security researchers and bloggers |
-| 📄 Security \| Papers | Academic journals and preprints (IEEE, ACM, arXiv) |
-| 🌐 Security \| Blogs | Broad collection of security blogs |
-| 🗞 Security \| Generic News | General security news outlets |
-| 🎯 Security \| Communities | Security community sites and mailing lists |
-| ⚔️ Security \| Orgs & No-profits | EFF, OWASP, ISRG, Let's Encrypt |
-| 🚔 Security \| LEA, GOV, CERT | Government CERTs, law enforcement |
-| 👾 Security \| Hardware | Firmware and hardware security |
-| ◀️ Security \| Reversing | Reverse engineering blogs and tools |
-| 🏢 Security \| Enterprises | Large security vendor blogs |
-| 🆘 Security \| Alerts and Advisories | CISA, vendor advisories, CVE feeds |
-| 🔒 Security \| Privacy | Privacy-focused tools and news |
-| 🏛 Tech \| Top Companies | Major tech company blogs |
-| 👩‍💻 Tech \| Curated 2 | Curated tech aggregators (Techmeme, HN) |
-| 💻 Coding 2 | Developer-focused feeds (GitHub) |
-| 📟 Hardware & IoT | IoT, embedded systems, SDR |
-| Tech \| News | General technology news |
-| AI | AI labs and research (OpenAI, Anthropic, Hugging Face) |
-| Distro | Linux distribution news (Debian, Ubuntu) |
-| GitHub | GitHub trending repositories |
-| Science | Science news |
+| 00 🧪 Review Queue | Feeds awaiting endpoint repair, duplicate review, or freshness review |
+| 01 🚨 Alerts & Advisories | Time-sensitive vulnerability, incident, breach, and vendor advisories |
+| 02 📩 Curated Editions & Podcasts | Bounded newsletters, editorial digests, and security podcasts |
+| 03 🔐 Platform, Firmware & RoT | UEFI, secure boot, firmware, silicon, platform trust, and roots of trust |
+| 04 ⚔️ Vulnerability & Exploit Research | Vulnerability discovery, exploitation, offensive research, and red teaming |
+| 05 🔗 Software Supply Chain & AppSec | Application, cloud, dependency, and software supply-chain security |
+| 06 🕵️ Threat Intel, Malware & Detection | Threat intelligence, malware analysis, detection, and incident research |
+| 07 ◀️ Reverse Engineering & DFIR | Binary analysis, reverse engineering, digital forensics, and incident response |
+| 08 🧠 AI & Agent Security | Security testing and abuse analysis of AI and agent systems |
+| 09 🛡️ Standards & Governance | Standards, policy, compliance, coordination, and ecosystem governance |
+| 10 🔏 Privacy, Crypto & Digital Rights | Privacy, cryptography, digital rights, and secure communications |
+| 11 📄 Security Papers & Preprints | Academic journals, proceedings, papers, and preprints |
+| 12 🔊 Conferences, CFPs & Talks | Conference announcements, calls for papers, programs, and talks |
+| 13 🗞️ Security News & Commentary | Security reporting, analysis, and commentary |
+| 14 📡 Security Linkstream | High-volume security aggregation and discovery streams |
+| 15 🔩 Hardware, Maker & IoT | General hardware, embedded systems, maker projects, SDR, and IoT |
+| 16 💻 Tech, AI & Science | General technology, engineering, AI, and science coverage |
+| 17 📌 Personal & Misc | Personal and cross-domain writing without a stable operational mode |
+
+The Review Queue is intentionally first while it contains unresolved feeds. Once empty, it can be
+renamed to `99 🧪 Review Queue` so it remains available without interrupting the normal reading flow.
 
 ## Maintenance
 
-This repo includes Python scripts (managed with [uv](https://docs.astral.sh/uv/)) for feed maintenance:
+This repo includes Python scripts managed with [uv](https://docs.astral.sh/uv/):
 
 ```bash
 # Show feed statistics
@@ -56,21 +54,32 @@ uv run python -m scripts.check_feeds
 
 # Add a single feed
 uv run python -m scripts.add_feeds \
-  --name "Example Blog" \
+  --name "Example Research Blog" \
   --xml-url "https://example.com/feed" \
   --html-url "https://example.com" \
-  --folder "🌐 Security | Blogs"
+  --folder "04 ⚔️ Vulnerability & Exploit Research"
 
 # Bulk import from another OPML file
-uv run python -m scripts.add_feeds --from-opml other.opml --target-folder "🌐 Security | Blogs"
+uv run python -m scripts.add_feeds \
+  --from-opml other.opml \
+  --target-folder "03 🔐 Platform, Firmware & RoT"
 
 # List available folders
 uv run python -m scripts.add_feeds --list-folders
 ```
 
+Validate structural changes before committing:
+
+```bash
+xmllint --noout feeds.xml
+uv run python -m scripts.stats
+```
+
 ## Contributing
 
-Contributions are welcomed -- fork and send pull requests. New feeds should be placed in the appropriate existing category folder.
+Contributions are welcome—fork the repository and send a pull request. Place new feeds according to
+their dominant reading action and content. Preserve the numeric prefix, emoji, and flat folder
+structure.
 
 ## Credits
 
