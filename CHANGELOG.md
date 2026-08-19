@@ -4,13 +4,21 @@
 
 ### Changed
 - Exported the reconciled live Miniflux inventory into `feeds.xml`
-- Replaced the 26-folder source-type layout with 17 action-oriented folders plus a temporary Review Queue
-- Added numeric folder prefixes so alphabetical readers preserve the intended triage-to-context workflow
-- Classified every existing subscription into exactly one destination; retained five repair/review candidates in `00 🧪 Review Queue`
-- Removed four repository-only subscriptions while reconciling to the 358-feed Miniflux inventory
+- Expanded the action-oriented taxonomy with dedicated OT/ICS Security, Business & Markets,
+  Hyperscalers, and Neo-clouds folders
+- Reordered the remaining folders so numeric prefixes preserve the intended triage-to-context workflow
+- Moved Forescout and Industrial Cyber into OT/ICS Security and consolidated technology-business
+  reporting in Business & Markets
+- Cleared the Review Queue by placing MIT Technology Review and IOT Insights, and removing three
+  redundant or unavailable subscriptions
+
+### Added
+- 11 feeds across the four new subject areas, including Claroty Team82, SecurityWeek ICS/OT,
+  Waterfall Security, Sifted, AWS, Google Cloud, Microsoft Azure, CoreWeave, Lambda, Together AI,
+  and Nebius
 
 ### Net result
-- 358 feeds across 18 flat folders
+- 366 feeds across 21 nonempty flat folders
 
 ## 2026-07-11
 

@@ -4,13 +4,6 @@
         <title>Information and Cyber Security RSS/Atom Feeds</title>
     </head>
     <body>
-        <outline text="00 🧪 Review Queue">
-            <outline title="Cado Security" text="Cado Security" xmlUrl="https://www.cadosecurity.com/feed/" htmlUrl="https://www.cadosecurity.com/" type="rss"></outline>
-            <outline title="Check Point Research" text="Check Point Research" xmlUrl="https://research.checkpoint.com/feed/" htmlUrl="https://research.checkpoint.com/" type="rss"></outline>
-            <outline title="MIT Technology Review" text="MIT Technology Review" xmlUrl="https://www.technologyreview.com/stories.rss" htmlUrl="https://www.technologyreview.com/" type="rss"></outline>
-            <outline title="Business Insider" text="Business Insider" xmlUrl="https://feeds.feedburner.com/businessinsider/science" htmlUrl="https://www.businessinsider.com/" type="rss"></outline>
-            <outline title="IOT Insights" text="IOT Insights" xmlUrl="https://www.iotinsights.com/feed/" htmlUrl="https://www.iotinsights.com/" type="rss"></outline>
-        </outline>
         <outline text="01 🚨 Alerts &amp; Advisories">
             <outline title="Alerts and advisories" text="Alerts and advisories" xmlUrl="https://cyber.gc.ca/webservice/en/rss/alerts" htmlUrl="https://cyber.gc.ca/webservice/en/rss/alerts" type="rss"></outline>
             <outline title="All CISA Advisories" text="All CISA Advisories" xmlUrl="https://www.cisa.gov/uscert/ncas/all.xml" htmlUrl="https://www.cisa.gov/" type="rss"></outline>
@@ -53,13 +46,19 @@
             <outline title="ceres-c" text="ceres-c" xmlUrl="https://ceres-c.it/feed.xml" htmlUrl="https://ceres-c.it/" type="rss"></outline>
             <outline title="Comsecuris Security Research &amp; Consulting" text="Comsecuris Security Research &amp; Consulting" xmlUrl="https://comsecuris.com/index.xml" htmlUrl="https://comsecuris.com/" type="rss"></outline>
             <outline title="Firmware  Security" text="Firmware  Security" xmlUrl="https://firmwaresecurity.com/feed/" htmlUrl="https://firmwaresecurity.com/" type="rss"></outline>
-            <outline title="Forescout" text="Forescout" xmlUrl="https://www.forescout.com/feed/" htmlUrl="https://www.forescout.com/" type="rss"></outline>
             <outline title="Ken Shirriff&#39;s blog" text="Ken Shirriff&#39;s blog" xmlUrl="https://www.righto.com/feeds/posts/default" htmlUrl="http://www.righto.com/" type="rss"></outline>
             <outline title="Oxide Computer Company Blog" text="Oxide Computer Company Blog" xmlUrl="https://oxide.computer/blog/feed" htmlUrl="https://oxide.computer/" type="rss"></outline>
             <outline title="Security | DMA | Hacking" text="Security | DMA | Hacking" xmlUrl="https://blog.frizk.net/atom.xml" htmlUrl="https://blog.frizk.net/" type="rss"></outline>
             <outline title="Taszk Labs on taszk.io labs" text="Taszk Labs on taszk.io labs" xmlUrl="https://labs.taszk.io/index.xml" htmlUrl="https://labs.taszk.io/" type="rss"></outline>
         </outline>
-        <outline text="04 ⚔️ Vulnerability &amp; Exploit Research">
+        <outline text="04 🏭 OT &amp; ICS Security">
+            <outline title="Claroty Team82 Disclosure Dashboard" text="Claroty Team82 Disclosure Dashboard" xmlUrl="https://www.claroty.com/team82/disclosure-dashboard/feed" htmlUrl="https://claroty.com" type="rss"></outline>
+            <outline title="Forescout" text="Forescout" xmlUrl="https://www.forescout.com/feed/" htmlUrl="https://www.forescout.com/" type="rss"></outline>
+            <outline title="Industrial Cyber" text="Industrial Cyber" xmlUrl="https://industrialcyber.co/feed/" htmlUrl="https://industrialcyber.co/" type="rss"></outline>
+            <outline title="SecurityWeek ICS/OT" text="SecurityWeek ICS/OT" xmlUrl="https://www.securityweek.com/category/ics-ot/feed/" htmlUrl="https://www.securityweek.com/category/ics-ot/" type="rss"></outline>
+            <outline title="Waterfall Security" text="Waterfall Security" xmlUrl="https://waterfall-security.com/feed/" htmlUrl="https://waterfall-security.com" type="rss"></outline>
+        </outline>
+        <outline text="05 ⚔️ Vulnerability &amp; Exploit Research">
             <outline title="Almost Secure" text="Almost Secure" xmlUrl="https://palant.info/rss.xml" htmlUrl="https://palant.info/" type="rss"></outline>
             <outline title="Archives - SecureLayer7 - Offensive Security, API Scanner &amp; Attack Surface Management" text="Archives - SecureLayer7 - Offensive Security, API Scanner &amp; Attack Surface Management" xmlUrl="https://blog.securelayer7.net/feed/" htmlUrl="https://blog.securelayer7.net/" type="rss"></outline>
             <outline title="bishopfox.com" text="bishopfox.com" xmlUrl="https://bishopfox.com/feeds/blog.rss" htmlUrl="https://bishopfox.com/" type="rss"></outline>
@@ -103,7 +102,7 @@
             <outline title="WeSecureApp :: Securing Offensively" text="WeSecureApp :: Securing Offensively" xmlUrl="https://wesecureapp.com/feed/" htmlUrl="https://wesecureapp.com/" type="rss"></outline>
             <outline title="Zero Day Initiative - Blog" text="Zero Day Initiative - Blog" xmlUrl="https://www.thezdi.com/blog?format=rss" htmlUrl="https://www.thezdi.com/blog/" type="rss"></outline>
         </outline>
-        <outline text="05 🔗 Software Supply Chain &amp; AppSec">
+        <outline text="06 🔗 Software Supply Chain &amp; AppSec">
             <outline title="2024 Sonatype Blog" text="2024 Sonatype Blog" xmlUrl="https://blog.sonatype.com/rss.xml" htmlUrl="https://www.sonatype.com/blog" type="rss"></outline>
             <outline title="Aqua Blog" text="Aqua Blog" xmlUrl="https://blog.aquasec.com/rss.xml" htmlUrl="https://blog.aquasec.com/" type="rss"></outline>
             <outline title="AWS Security Blog" text="AWS Security Blog" xmlUrl="https://aws.amazon.com/blogs/security/feed/" htmlUrl="https://aws.amazon.com/blogs/security/" type="rss"></outline>
@@ -117,7 +116,7 @@
             <outline title="Wiz Blog | RSS feed" text="Wiz Blog | RSS feed" xmlUrl="https://www.wiz.io/blog/rss/" htmlUrl="https://www.wiz.io/" type="rss"></outline>
             <outline title="Wordfence" text="Wordfence" xmlUrl="https://www.wordfence.com/feed/" htmlUrl="https://www.wordfence.com/" type="rss"></outline>
         </outline>
-        <outline text="06 🕵️ Threat Intel, Malware &amp; Detection">
+        <outline text="07 🕵️ Threat Intel, Malware &amp; Detection">
             <outline title="abuse.ch | IT-Security Blog" text="abuse.ch | IT-Security Blog" xmlUrl="https://feeds.feedburner.com/Abusech" htmlUrl="https://abuse.ch/" type="rss"></outline>
             <outline title="ASEC" text="ASEC" xmlUrl="https://asec.ahnlab.com/en/feed/" htmlUrl="https://asec.ahnlab.com/en/" type="rss"></outline>
             <outline title="BankInfoSecurity.com  RSS Syndication" text="BankInfoSecurity.com  RSS Syndication" xmlUrl="https://www.bankinfosecurity.com/rss-feeds" htmlUrl="https://www.bankinfosecurity.com/rssFeeds.php?type=main" type="rss"></outline>
@@ -161,7 +160,7 @@
             <outline title="VirusTotal Blog" text="VirusTotal Blog" xmlUrl="https://blog.virustotal.com/feeds/posts/default" htmlUrl="https://blog.virustotal.com/" type="rss"></outline>
             <outline title="WeLiveSecurity" text="WeLiveSecurity" xmlUrl="https://www.welivesecurity.com/feed" htmlUrl="https://www.welivesecurity.com/" type="rss"></outline>
         </outline>
-        <outline text="07 ◀️ Reverse Engineering &amp; DFIR">
+        <outline text="08 ◀️ Reverse Engineering &amp; DFIR">
             <outline title="AboutDFIR – The Definitive Compendium Project" text="AboutDFIR – The Definitive Compendium Project" xmlUrl="https://aboutdfir.com/feed" htmlUrl="https://aboutdfir.com/" type="rss"></outline>
             <outline title="Binary Ninja" text="Binary Ninja" xmlUrl="https://binary.ninja/feed.xml" htmlUrl="https://binary.ninja/" type="rss"></outline>
             <outline title="Blog - Möbius Strip Reverse Engineering" text="Blog - Möbius Strip Reverse Engineering" xmlUrl="https://www.msreverseengineering.com/blog?format=RSS" htmlUrl="https://www.msreverseengineering.com/blog/" type="rss"></outline>
@@ -178,11 +177,11 @@
             <outline title="Reverse Engineering" text="Reverse Engineering" xmlUrl="https://www.reddit.com/r/ReverseEngineering/.rss" htmlUrl="https://www.reddit.com/r/ReverseEngineering/" type="rss"></outline>
             <outline title="The DFIR Report" text="The DFIR Report" xmlUrl="https://thedfirreport.com/feed/" htmlUrl="https://thedfirreport.com/home/" type="rss"></outline>
         </outline>
-        <outline text="08 🧠 AI &amp; Agent Security">
+        <outline text="09 🧠 AI &amp; Agent Security">
             <outline title="Barrack AI Blog" text="Barrack AI Blog" xmlUrl="https://blog.barrack.ai/rss.xml" htmlUrl="https://blog.barrack.ai/" type="rss"></outline>
             <outline title="Embrace The Red" text="Embrace The Red" xmlUrl="https://embracethered.com/blog/index.xml" htmlUrl="https://embracethered.com/blog/" type="rss"></outline>
         </outline>
-        <outline text="09 🛡️ Standards &amp; Governance">
+        <outline text="10 🛡️ Standards &amp; Governance">
             <outline title="All Feed" text="All Feed" xmlUrl="https://www.ncsc.gov.uk/api/1/services/v1/all-rss-feed.xml" htmlUrl="https://www.ncsc.gov.uk/" type="rss"></outline>
             <outline title="CERT.at - Blog" text="CERT.at - Blog" xmlUrl="https://cert.at/cert-at.en.blog.rss_2.0.xml" htmlUrl="https://www.cert.at/" type="rss"></outline>
             <outline title="CERT Polska" text="CERT Polska" xmlUrl="https://www.cert.pl/en/feed/" htmlUrl="https://cert.pl/en/" type="rss"></outline>
@@ -202,7 +201,7 @@
             <outline title="www.kyberturvallisuuskeskus.fi RSS" text="www.kyberturvallisuuskeskus.fi RSS" xmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en" htmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en" type="rss"></outline>
             <outline title="www.kyberturvallisuuskeskus.fi RSS" text="www.kyberturvallisuuskeskus.fi RSS" xmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en/399" htmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en/399" type="rss"></outline>
         </outline>
-        <outline text="10 🔏 Privacy, Crypto &amp; Digital Rights">
+        <outline text="11 🔏 Privacy, Crypto &amp; Digital Rights">
             <outline title="A Few Thoughts on Cryptographic Engineering" text="A Few Thoughts on Cryptographic Engineering" xmlUrl="https://blog.cryptographyengineering.com/feed/" htmlUrl="https://blog.cryptographyengineering.com/" type="rss"></outline>
             <outline title="Deeplinks" text="Deeplinks" xmlUrl="https://www.eff.org/rss/updates.xml" htmlUrl="https://www.eff.org/rss/updates.xml" type="rss"></outline>
             <outline title="EFF Action Center" text="EFF Action Center" xmlUrl="https://act.eff.org/action.atom" htmlUrl="https://act.eff.org/" type="rss"></outline>
@@ -215,7 +214,7 @@
             <outline title="Spread Privacy" text="Spread Privacy" xmlUrl="https://spreadprivacy.com/rss/" htmlUrl="https://spreadprivacy.com/" type="rss"></outline>
             <outline title="The Proton Blog" text="The Proton Blog" xmlUrl="https://proton.me/blog/feed" htmlUrl="https://proton.me/" type="rss"></outline>
         </outline>
-        <outline text="11 📄 Security Papers &amp; Preprints">
+        <outline text="12 📄 Security Papers &amp; Preprints">
             <outline title="ACM Transactions on Privacy and Security (TOPS)" text="ACM Transactions on Privacy and Security (TOPS)" xmlUrl="https://rss.acm.org/dl/J1547.xml" htmlUrl="http://dl.acm.org/citation.cfm?id=3476876" type="rss"></outline>
             <outline title="Association for Computing Machinery: ACM Computing Surveys: Table of Contents" text="Association for Computing Machinery: ACM Computing Surveys: Table of Contents" xmlUrl="https://dl.acm.org/action/showFeed?type=etoc&amp;feed=rss&amp;jc=csur" htmlUrl="https://dl.acm.org/loi/csur?af=R" type="rss"></outline>
             <outline title="cs.CR updates on arXiv.org" text="cs.CR updates on arXiv.org" xmlUrl="https://export.arxiv.org/rss/cs.CR" htmlUrl="http://rss.arxiv.org/rss/cs.CR" type="rss"></outline>
@@ -226,10 +225,10 @@
             <outline title="IEEE Transactions on Software Engineering - new TOC" text="IEEE Transactions on Software Engineering - new TOC" xmlUrl="https://ieeexplore.ieee.org/rss/TOC32.XML" htmlUrl="http://ieeexplore.ieee.org/" type="rss"></outline>
             <outline title="MIT Technology Review" text="MIT Technology Review" xmlUrl="https://www.technologyreview.com/feed/" htmlUrl="https://www.technologyreview.com/" type="rss"></outline>
         </outline>
-        <outline text="12 🔊 Conferences, CFPs &amp; Talks">
+        <outline text="13 🔊 Conferences, CFPs &amp; Talks">
             <outline title="44CON" text="44CON" xmlUrl="https://44con.com/feed/" htmlUrl="https://44con.com/" type="rss"></outline>
         </outline>
-        <outline text="13 🗞️ Security News &amp; Commentary">
+        <outline text="14 🗞️ Security News &amp; Commentary">
             <outline title="404 Media" text="404 Media" xmlUrl="https://www.404media.co/rss" htmlUrl="https://www.404media.co/" type="rss"></outline>
             <outline title="Adam Caudill" text="Adam Caudill" xmlUrl="https://adamcaudill.com/index.xml" htmlUrl="https://adamcaudill.com/" type="rss"></outline>
             <outline title="Ars Technica - All content" text="Ars Technica - All content" xmlUrl="https://feeds.arstechnica.com/arstechnica/index/" htmlUrl="https://arstechnica.com/" type="rss"></outline>
@@ -243,7 +242,6 @@
             <outline title="Blog RSS Feed" text="Blog RSS Feed" xmlUrl="https://feeds.feedburner.com/tripwire-state-of-security" htmlUrl="https://www.tripwire.com/" type="rss"></outline>
             <outline title="C4ISRNet" text="C4ISRNet" xmlUrl="https://www.c4isrnet.com/arc/outboundfeeds/rss/category/cyber/?outputType=xml" htmlUrl="https://www.c4isrnet.com/" type="rss"></outline>
             <outline title="ComputerWeekly.com" text="ComputerWeekly.com" xmlUrl="https://www.computerweekly.com/rss/IT-security.xml" htmlUrl="https://www.computerweekly.com/" type="rss"></outline>
-            <outline title="Crunchbase News" text="Crunchbase News" xmlUrl="https://news.crunchbase.com/feed" htmlUrl="https://news.crunchbase.com/" type="rss"></outline>
             <outline title="CSO Online" text="CSO Online" xmlUrl="https://www.csoonline.com/feed/" htmlUrl="https://www.csoonline.com/" type="rss"></outline>
             <outline title="Cybercrime Magazine" text="Cybercrime Magazine" xmlUrl="https://cybersecurityventures.com/feed/" htmlUrl="https://cybersecurityventures.com/" type="rss"></outline>
             <outline title="CyberScoop" text="CyberScoop" xmlUrl="https://www.cyberscoop.com/feed/" htmlUrl="https://cyberscoop.com/" type="rss"></outline>
@@ -269,7 +267,6 @@
             <outline title="Hacking News -- ScienceDaily" text="Hacking News -- ScienceDaily" xmlUrl="https://www.sciencedaily.com/rss/computers_math/hacking.xml" htmlUrl="https://www.sciencedaily.com/news/computers_math/hacking/" type="rss"></outline>
             <outline title="Have I Been Pwned latest breaches" text="Have I Been Pwned latest breaches" xmlUrl="https://feeds.feedburner.com/HaveIBeenPwnedLatestBreaches" htmlUrl="https://haveibeenpwned.com/" type="rss"></outline>
             <outline title="HealthTech Magazine" text="HealthTech Magazine" xmlUrl="https://feeds.feedburner.com/HealthTechMagazine" htmlUrl="https://healthtechmagazine.net/" type="rss"></outline>
-            <outline title="Industrial Cyber" text="Industrial Cyber" xmlUrl="https://industrialcyber.co/feed/" htmlUrl="https://industrialcyber.co/" type="rss"></outline>
             <outline title="Information Security Buzz" text="Information Security Buzz" xmlUrl="https://feeds.feedburner.com/InformationSecurityBuzz" htmlUrl="https://informationsecuritybuzz.com/" type="rss"></outline>
             <outline title="Infosecurity Magazine" text="Infosecurity Magazine" xmlUrl="https://www.infosecurity-magazine.com/rss/news" htmlUrl="https://www.infosecurity-magazine.com/news/" type="rss"></outline>
             <outline title="iTnews" text="iTnews" xmlUrl="https://www.itnews.com.au/RSS/rss.ashx" htmlUrl="https://www.itnews.com.au/" type="rss"></outline>
@@ -314,40 +311,59 @@
             <outline title="www.theregister.com - Articles" text="www.theregister.com - Articles" xmlUrl="https://www.theregister.co.uk/security/headlines.atom" htmlUrl="https://www.theregister.com/" type="rss"></outline>
             <outline title="www.theregister.com - Articles" text="www.theregister.com - Articles" xmlUrl="https://api.theregister.com/api/v1/article?orderBy=published&amp;site_id=2&amp;remapper=rss" htmlUrl="https://www.theregister.com/" type="rss"></outline>
         </outline>
-        <outline text="14 📡 Security Linkstream">
+        <outline text="15 💼 Business &amp; Markets">
+            <outline title="Bloomberg Technology" text="Bloomberg Technology" xmlUrl="https://feeds.bloomberg.com/technology/news.rss" htmlUrl="http://bloomberg.com/technology/" type="rss"></outline>
+            <outline title="Business Insider" text="Business Insider" xmlUrl="https://feeds.feedburner.com/typepad/alleyinsider/silicon_alley_insider" htmlUrl="https://www.businessinsider.com/" type="rss"></outline>
+            <outline title="CIO Dive - Latest News" text="CIO Dive - Latest News" xmlUrl="https://www.ciodive.com/feeds/news/" htmlUrl="https://www.ciodive.com/news/" type="rss"></outline>
+            <outline title="Crunchbase News" text="Crunchbase News" xmlUrl="https://news.crunchbase.com/feed" htmlUrl="https://news.crunchbase.com/" type="rss"></outline>
+            <outline title="DCD" text="DCD" xmlUrl="https://www.datacenterdynamics.com/rss" htmlUrl="https://www.datacenterdynamics.com/en/" type="rss"></outline>
+            <outline title="Fast Company - technology" text="Fast Company - technology" xmlUrl="https://www.fastcompany.com/technology/rss" htmlUrl="https://www.fastcompany.com/" type="rss"></outline>
+            <outline title="Forbes - Innovation" text="Forbes - Innovation" xmlUrl="https://www.forbes.com/innovation/feed/" htmlUrl="https://www.forbes.com/innovation/" type="rss"></outline>
+            <outline title="MIT Technology Review" text="MIT Technology Review" xmlUrl="https://www.technologyreview.com/stories.rss" htmlUrl="https://www.technologyreview.com/" type="rss"></outline>
+            <outline title="Sifted" text="Sifted" xmlUrl="https://sifted.eu/feed" htmlUrl="https://sifted.eu/" type="rss"></outline>
+            <outline title="TechCrunch" text="TechCrunch" xmlUrl="https://techcrunch.com/feed/" htmlUrl="https://techcrunch.com/" type="rss"></outline>
+            <outline title="WSJ.com: WSJD" text="WSJ.com: WSJD" xmlUrl="https://feeds.a.dj.com/rss/RSSWSJD.xml" htmlUrl="http://online.wsj.com/" type="rss"></outline>
+        </outline>
+        <outline text="16 📡 Security Linkstream">
             <outline title="Talkback Resources" text="Talkback Resources" xmlUrl="https://talkback.sh/resources/feed/" htmlUrl="https://talkback.sh/resources/feed/" type="rss"></outline>
         </outline>
-        <outline text="15 🔩 Hardware, Maker &amp; IoT">
+        <outline text="17 🔩 Hardware, Maker &amp; IoT">
             <outline title="Arduino Blog" text="Arduino Blog" xmlUrl="https://blog.arduino.cc/feed/" htmlUrl="https://blog.arduino.cc/" type="rss"></outline>
             <outline title="Hackaday" text="Hackaday" xmlUrl="https://hackaday.com/feed/" htmlUrl="https://hackaday.com/" type="rss"></outline>
             <outline title="Home Assistant" text="Home Assistant" xmlUrl="https://www.home-assistant.io/atom.xml" htmlUrl="https://www.home-assistant.io/" type="rss"></outline>
             <outline title="Raspberry Pi" text="Raspberry Pi" xmlUrl="https://www.raspberrypi.com/feed/" htmlUrl="https://www.raspberrypi.com/" type="rss"></outline>
             <outline title="rtl-sdr.com" text="rtl-sdr.com" xmlUrl="https://www.rtl-sdr.com/feed/" htmlUrl="https://www.rtl-sdr.com/" type="rss"></outline>
+            <outline title="IOT Insights" text="IOT Insights" xmlUrl="https://www.iotinsights.com/feed/" htmlUrl="https://www.iotinsights.com/" type="rss"></outline>
         </outline>
-        <outline text="16 💻 Tech, AI &amp; Science">
+        <outline text="18 ☁️ Hyperscalers">
+            <outline title="AWS News Blog" text="AWS News Blog" xmlUrl="https://aws.amazon.com/blogs/aws/feed/" htmlUrl="https://aws.amazon.com/blogs/aws/" type="rss"></outline>
+            <outline title="Google Cloud Blog" text="Google Cloud Blog" xmlUrl="https://cloudblog.withgoogle.com/rss/" htmlUrl="https://cloud.google.com/blog/" type="rss"></outline>
+            <outline title="Microsoft Azure Blog" text="Microsoft Azure Blog" xmlUrl="https://azure.microsoft.com/en-us/blog/feed/" htmlUrl="https://azure.microsoft.com/en-us/blog/" type="rss"></outline>
+        </outline>
+        <outline text="19 🌩️ Neo-clouds">
+            <outline title="CoreWeave Blog" text="CoreWeave Blog" xmlUrl="https://www.coreweave.com/blog/rss.xml" htmlUrl="https://wf.coreweave.com" type="rss"></outline>
+            <outline title="Lambda Blog" text="Lambda Blog" xmlUrl="https://lambda.ai/blog/rss.xml" htmlUrl="https://lambda.ai/blog" type="rss"></outline>
+            <outline title="Nebius Service Health" text="Nebius Service Health" xmlUrl="https://status.nebius.com/history.rss" htmlUrl="https://status.nebius.com" type="rss"></outline>
+            <outline title="Together AI Blog" text="Together AI Blog" xmlUrl="https://www.together.ai/blog/rss.xml" htmlUrl="https://www.together.ai" type="rss"></outline>
+        </outline>
+        <outline text="20 💻 Tech, AI &amp; Science">
             <outline title="9to5Mac" text="9to5Mac" xmlUrl="https://9to5mac.com/feed/" htmlUrl="https://9to5mac.com/" type="rss"></outline>
             <outline title="Anthropic Engineering" text="Anthropic Engineering" xmlUrl="https://rsshub.isrss.com/anthropic/engineering" htmlUrl="https://www.anthropic.com/engineering" type="rss"></outline>
             <outline title="Anthropic News" text="Anthropic News" xmlUrl="https://rsshub.isrss.com/anthropic/news" htmlUrl="https://www.anthropic.com/news" type="rss"></outline>
             <outline title="Apple Newsroom" text="Apple Newsroom" xmlUrl="https://www.apple.com/newsroom/rss-feed.rss" htmlUrl="https://www.apple.com/newsroom/rss-feed.rss" type="rss"></outline>
             <outline title="BBC News" text="BBC News" xmlUrl="https://feeds.bbci.co.uk/news/technology/rss.xml" htmlUrl="https://www.bbc.co.uk/news/technology" type="rss"></outline>
-            <outline title="Bloomberg Technology" text="Bloomberg Technology" xmlUrl="https://feeds.bloomberg.com/technology/news.rss" htmlUrl="http://bloomberg.com/technology/" type="rss"></outline>
             <outline title="Boing Boing" text="Boing Boing" xmlUrl="https://boingboing.net/feed" htmlUrl="https://boingboing.net/" type="rss"></outline>
-            <outline title="Business Insider" text="Business Insider" xmlUrl="https://feeds.feedburner.com/typepad/alleyinsider/silicon_alley_insider" htmlUrl="https://www.businessinsider.com/" type="rss"></outline>
-            <outline title="CIO Dive - Latest News" text="CIO Dive - Latest News" xmlUrl="https://www.ciodive.com/feeds/news/" htmlUrl="https://www.ciodive.com/news/" type="rss"></outline>
             <outline title="Cisco Blogs" text="Cisco Blogs" xmlUrl="https://blogs.cisco.com/feed" htmlUrl="https://blogs.cisco.com/" type="rss"></outline>
             <outline title="Cloudflare Blog" text="Cloudflare Blog" xmlUrl="https://blog.cloudflare.com/rss/" htmlUrl="https://blog.cloudflare.com/" type="rss"></outline>
             <outline title="cylab.be" text="cylab.be" xmlUrl="https://cylab.be/rss" htmlUrl="https://cylab.be/blog" type="rss"></outline>
             <outline title="daniel.haxx.se" text="daniel.haxx.se" xmlUrl="https://daniel.haxx.se/blog/feed/" htmlUrl="https://daniel.haxx.se/blog" type="rss"></outline>
-            <outline title="DCD" text="DCD" xmlUrl="https://www.datacenterdynamics.com/rss" htmlUrl="https://www.datacenterdynamics.com/en/" type="rss"></outline>
             <outline title="Debian News" text="Debian News" xmlUrl="https://www.debian.org/News/news" htmlUrl="https://www.debian.org/News/" type="rss"></outline>
             <outline title="Digital Journal" text="Digital Journal" xmlUrl="https://www.digitaljournal.com/feed" htmlUrl="https://www.digitaljournal.com/" type="rss"></outline>
             <outline title="Drew DeVault&#39;s blog" text="Drew DeVault&#39;s blog" xmlUrl="https://drewdevault.com/blog/index.xml" htmlUrl="https://drewdevault.com/" type="rss"></outline>
             <outline title="Engadget - Technology News &amp; Expert Reviews" text="Engadget - Technology News &amp; Expert Reviews" xmlUrl="https://www.engadget.com/rss.xml" htmlUrl="https://www.engadget.com/" type="rss"></outline>
             <outline title="Engineering at Meta" text="Engineering at Meta" xmlUrl="https://engineering.fb.com/feed/" htmlUrl="https://engineering.fb.com/" type="rss"></outline>
             <outline title="English - VICE" text="English - VICE" xmlUrl="https://www.vice.com/en/rss" htmlUrl="https://www.vice.com/en/" type="rss"></outline>
-            <outline title="Fast Company - technology" text="Fast Company - technology" xmlUrl="https://www.fastcompany.com/technology/rss" htmlUrl="https://www.fastcompany.com/" type="rss"></outline>
             <outline title="Features - Ars Technica" text="Features - Ars Technica" xmlUrl="https://feeds.arstechnica.com/arstechnica/features" htmlUrl="https://arstechnica.com/" type="rss"></outline>
-            <outline title="Forbes - Innovation" text="Forbes - Innovation" xmlUrl="https://www.forbes.com/innovation/feed/" htmlUrl="https://www.forbes.com/innovation/" type="rss"></outline>
             <outline title="GitHub Weekly Trending Repositories" text="GitHub Weekly Trending Repositories" xmlUrl="https://mshibanami.github.io/GitHubTrendingRSS/weekly/all.xml" htmlUrl="https://mshibanami.github.io/GitHubTrendingRSS" type="rss"></outline>
             <outline title="Gizmodo" text="Gizmodo" xmlUrl="https://gizmodo.com/rss" htmlUrl="https://gizmodo.com/" type="rss"></outline>
             <outline title="Hacker News" text="Hacker News" xmlUrl="https://news.ycombinator.com/rss" htmlUrl="https://news.ycombinator.com/" type="rss"></outline>
@@ -373,7 +389,6 @@
             <outline title="Silicon Republic" text="Silicon Republic" xmlUrl="https://www.siliconrepublic.com/feed" htmlUrl="https://www.siliconrepublic.com/" type="rss"></outline>
             <outline title="Slashdot" text="Slashdot" xmlUrl="https://rss.slashdot.org/Slashdot/slashdotMain" htmlUrl="https://slashdot.org/" type="rss"></outline>
             <outline title="Stories by saurav omar on Medium" text="Stories by saurav omar on Medium" xmlUrl="https://sauravomar01.medium.com/feed" htmlUrl="https://medium.com/@sauravomar01?source=rss-f4b7fddbf2d1------2" type="rss"></outline>
-            <outline title="TechCrunch" text="TechCrunch" xmlUrl="https://techcrunch.com/feed/" htmlUrl="https://techcrunch.com/" type="rss"></outline>
             <outline title="Techmeme" text="Techmeme" xmlUrl="https://www.techmeme.com/index.xml" htmlUrl="https://www.techmeme.com/" type="rss"></outline>
             <outline title="Tech Monitor" text="Tech Monitor" xmlUrl="https://techmonitor.ai/feed" htmlUrl="https://www.techmonitor.ai/" type="rss"></outline>
             <outline title="TechSpot" text="TechSpot" xmlUrl="https://www.techspot.com/backend.xml" htmlUrl="https://www.techspot.com/" type="rss"></outline>
@@ -388,9 +403,8 @@
             <outline title="Ubuntu blog" text="Ubuntu blog" xmlUrl="https://blog.ubuntu.com/feed" htmlUrl="https://ubuntu.com//blog/feed" type="rss"></outline>
             <outline title="Uros Popovic" text="Uros Popovic" xmlUrl="https://popovicu.com/rss.xml" htmlUrl="https://popovicu.com/" type="rss"></outline>
             <outline title="WIRED" text="WIRED" xmlUrl="https://www.wired.com/feed/rss" htmlUrl="https://www.wired.com/" type="rss"></outline>
-            <outline title="WSJ.com: WSJD" text="WSJ.com: WSJD" xmlUrl="https://feeds.a.dj.com/rss/RSSWSJD.xml" htmlUrl="http://online.wsj.com/" type="rss"></outline>
         </outline>
-        <outline text="17 📌 Personal &amp; Misc">
+        <outline text="21 📌 Personal &amp; Misc">
             <outline title="Better Humans - Medium" text="Better Humans - Medium" xmlUrl="https://betterhumans.pub/feed" htmlUrl="https://betterhumans.pub/?source=rss----7038e003d060---4" type="rss"></outline>
             <outline title="Brandon Boswell" text="Brandon Boswell" xmlUrl="https://brandonkboswell.com/index.xml" htmlUrl="https://brandonkboswell.com/" type="rss"></outline>
             <outline title="flyingpenguin" text="flyingpenguin" xmlUrl="https://flyingpenguin.com/feed" htmlUrl="https://www.flyingpenguin.com/" type="rss"></outline>
