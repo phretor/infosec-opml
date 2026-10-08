@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+<head>
+    <title>Miniflux</title>
+</head>
+<body>
+    <outline text="01 🚨 Alerts &amp; Advisories">
+        <outline title="CISA Advisories" text="CISA Advisories" xmlUrl="https://www.cisa.gov/all.xml" htmlUrl="https://www.cisa.gov/" type="rss"></outline>
+        <outline title="Full Disclosure" text="Full Disclosure" xmlUrl="https://seclists.org/rss/fulldisclosure.rss" htmlUrl="https://seclists.org/" type="rss"></outline>
+    </outline>
+    <outline text="00 🧪 Review Queue"></outline>
+    <outline text="02 📩 Curated Editions">
+        <outline title="Risky Business" text="Risky Business" xmlUrl="https://risky.biz/feeds/risky-business/" htmlUrl="https://risky.biz/" type="rss"></outline>
+    </outline>
+</body>
+</opml>

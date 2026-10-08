@@ -2,6 +2,7 @@
 
 import argparse
 import sys
+import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -12,6 +13,7 @@ FEEDS_XML = Path(__file__).resolve().parent.parent / "feeds.xml"
 TIMEOUT = 10
 MAX_WORKERS = 20
 USER_AGENT = "Mozilla/5.0 RSS Feed Checker"
+RETRY_PAUSE_SECONDS = 5
 
 
 def parse_feeds(path: Path) -> list[dict]:
@@ -105,6 +107,42 @@ def print_section(title: str, entries: list[dict]) -> None:
         print()
 
 
+def check_urls(urls: list[str], max_workers: int = MAX_WORKERS) -> dict[str, int | str]:
+    """Concurrently check a list of URLs. Returns {url: status}."""
+    results: dict[str, int | str] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(check_url, url): url for url in urls}
+        for future in as_completed(futures):
+            url, status = future.result()
+            if status != "skip":
+                results[url] = status
+    return results
+
+
+def classify_batch(
+    urls: list[str], max_workers: int = MAX_WORKERS, pause_seconds: float = RETRY_PAUSE_SECONDS
+) -> dict[str, tuple[str, int | str]]:
+    """Classify URLs as ok/dead/transient with a one-shot retry on initially-dead ones.
+
+    Returns {url: (bucket, status)}. Dead URLs are retried once after a short
+    pause; successful retries are promoted out of the dead set.
+    """
+    initial = check_urls(urls, max_workers=max_workers)
+    classified: dict[str, tuple[str, int | str]] = {
+        url: (classify(status), status) for url, status in initial.items()
+    }
+
+    dead_urls = [url for url, (bucket, _) in classified.items() if bucket == "dead"]
+    if dead_urls:
+        time.sleep(pause_seconds)
+        retry = check_urls(dead_urls, max_workers=max_workers)
+        for url, status in retry.items():
+            new_bucket = classify(status)
+            if new_bucket != "dead":
+                classified[url] = (new_bucket, status)
+    return classified
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Check RSS/Atom feed health in feeds.xml")
     parser.add_argument(
@@ -116,6 +154,11 @@ def main() -> None:
         "--remove-all",
         action="store_true",
         help="Remove all erroring feeds including transient failures (timeouts, 5xx, 429)",
+    )
+    parser.add_argument(
+        "--fail-on-dead",
+        action="store_true",
+        help="Exit non-zero if any feed is classified dead after the retry pass",
     )
     args = parser.parse_args()
 
@@ -134,19 +177,10 @@ def main() -> None:
     print(f"Feeds: {len(feeds)} entries, {len(unique_urls)} unique URLs\n")
     print("Checking feed URLs ...\n")
 
+    classified = classify_batch(list(unique_urls))
     results: dict[str, list[dict]] = {"ok": [], "dead": [], "transient": []}
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        futures = {pool.submit(check_url, url): url for url in unique_urls}
-        done = 0
-        for future in as_completed(futures):
-            done += 1
-            url, status = future.result()
-            if status == "skip":
-                continue
-            bucket = classify(status)
-            results[bucket].append({"url": url, "status": status, "feeds": unique_urls[url]})
-            if done % 50 == 0:
-                print(f"  Progress: {done}/{len(futures)}")
+    for url, (bucket, status) in classified.items():
+        results[bucket].append({"url": url, "status": status, "feeds": unique_urls[url]})
 
     ok, dead, transient = len(results["ok"]), len(results["dead"]), len(results["transient"])
     print(f"\nResults: {ok} OK, {dead} dead, {transient} transient\n")
@@ -164,6 +198,9 @@ def main() -> None:
             print(f"Removed {feeds_removed} {label} feed(s), {folders_removed} empty folder(s)")
         else:
             print("Nothing to remove.")
+
+    if args.fail_on_dead and dead > 0:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

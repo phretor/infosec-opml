@@ -1,0 +1,92 @@
+name: Miniflux Sync
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"  # Mondays, 06:00 UTC
+  workflow_dispatch: {}
+
+concurrency:
+  group: miniflux-sync
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Sync Miniflux into feeds.xml
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install project
+        run: uv sync --extra dev
+
+      - name: Run sync pipeline
+        id: sync
+        env:
+          MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}
+          MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}
+        run: |
+          set -euo pipefail
+          uv run python -m scripts.miniflux_sync
+          if git diff --quiet -- feeds.xml README.md CHANGELOG.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update sync PR
+        if: steps.sync.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
+        with:
+          branch: bot/miniflux-sync
+          delete-branch: false
+          commit-message: "chore: sync feeds.xml from Miniflux"
+          title: "chore: sync feeds.xml from Miniflux"
+          body: |
+            Automated sync of `feeds.xml` from the Miniflux taxonomy.
+
+            - README feed/folder counts updated to match
+            - CHANGELOG entry prepended with per-feed Added/Removed lines
+            - OPML normalized via `scripts.miniflux_sync`
+
+            Health-check results appear as a separate check on the PR head SHA.
+          labels: |
+            automated
+            miniflux-sync
+
+  health:
+    name: Feed health check
+    needs: sync
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out resulting feeds.xml
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ needs.sync.outputs.changed == 'true' && 'bot/miniflux-sync' || github.ref }}
+          persist-credentials: false
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install project
+        run: uv sync --extra dev
+
+      - name: Check feed health
+        run: uv run python -m scripts.check_feeds --fail-on-dead
