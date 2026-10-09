@@ -3,6 +3,29 @@
 ## 2026-10-09
 
 ### Added
+- `.github/workflows/pr-checks.yml`: automated PR checks on every pull request to `main` —
+  `xmllint` validity, `pytest`, OPML structural lint, `actionlint` + `zizmor` on workflow files,
+  README-vs-OPML consistency (advisory), and Miniflux-API-backed feed health (advisory, skipped
+  on fork PRs). Path-filtered to data/scripts/tests/project/workflow changes; concurrency
+  cancels superseded runs; top-level empty permissions with per-job `contents: read`
+- `.github/workflows/pr-linting.yml`: advisory `ruff check`, `ruff format --check`, and
+  `ty check` on `scripts/` and `tests/`
+- `scripts/lint_opml.py` + `feeds-lint-opml`: structural lint for `feeds.xml` enforcing flat
+  folders, required leaf attributes (`xmlUrl`, `htmlUrl`, `text`, `title`, `type="rss"`), no
+  duplicate `xmlUrl`, folder-name convention (`^NN <emoji> …`), and no feeds at `<body>` root
+- `scripts/check_readme.py` + `feeds-check-readme`: verifies `README.md` feed count, folder
+  count, and folder-name set match `feeds.xml`
+
+### Changed
+- `.github/workflows/miniflux-sync.yml`: scoped permissions per-job (least-privilege),
+  documented each `permissions:` block, and annotated repo-level secret references so `zizmor`
+  runs clean against the file
+- `pyproject.toml`: added `ruff==0.16.10` and `ty==0.0.85` to dev extras; set
+  `target-version = "py312"` on `[tool.ruff]`; added placeholder `[tool.ty]` block
+
+## 2026-10-09
+
+### Added
 - Team82 Disclosure Dashboard (01 🚨 Alerts & Advisories)
 - Daniel Miessler (02 📩 Curated Editions & Podcasts)
 - Darknet Diaries (02 📩 Curated Editions & Podcasts)
