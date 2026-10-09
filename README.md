@@ -50,8 +50,10 @@ empty categories from OPML exports, so the folder is not present in `feeds.xml` 
 (`.github/workflows/miniflux-sync.yml`, also runnable via `workflow_dispatch`). The workflow fetches
 Miniflux's OPML export, normalizes it, and — on a real diff — opens or updates a single long-lived
 PR on `bot/miniflux-sync` with the patched `feeds.xml`, README counts, and a mechanical CHANGELOG
-entry. A second job runs `scripts.check_feeds --fail-on-dead` against the resulting file; dead feeds
-block the PR as a red check, transient failures do not.
+entry. A second job runs `scripts.check_feeds --fail-on-dead` against the resulting file. Health
+status is read from Miniflux's own `/v1/feeds` API (not probed from the GitHub runner), so the gate
+reflects whether Miniflux can actually fetch each feed. Dead feeds (disabled, over the parsing-error
+threshold, or missing from Miniflux) block the PR as a red check; transient errors do not.
 
 ## Maintenance
 
@@ -61,8 +63,9 @@ This repo includes Python scripts managed with [uv](https://docs.astral.sh/uv/):
 # Show feed statistics
 uv run python -m scripts.stats
 
-# Check all feeds for broken URLs (--fail-on-dead gates the CI health check)
-uv run python -m scripts.check_feeds
+# Check feed health via Miniflux's API (requires MINIFLUX_URL + MINIFLUX_TOKEN env;
+# --fail-on-dead gates the CI health check)
+uv run python -m scripts.check_feeds --fail-on-dead
 
 # Reproduce a Miniflux sync locally against a saved OPML export
 uv run python -m scripts.miniflux_sync --input ./miniflux-export.opml --dry-run

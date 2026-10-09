@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-09
+
+### Changed
+- `scripts.check_feeds` now classifies feed health from Miniflux's `/v1/feeds` API rather than
+  probing each URL from the GitHub runner. The runner's egress IP produced false positives
+  (4xx/429/connection errors on feeds Miniflux fetches cleanly), so Miniflux's own
+  `parsing_error_count` and `disabled` are now the source of truth
+- Dead = `disabled`, `parsing_error_count >= --min-error-count` (default 3), or missing from
+  Miniflux; transient = `1 <= count < threshold`
+- Removed the `--remove`, `--remove-all`, and `--retry-pause-seconds` flags: removal belongs in
+  Miniflux now (the next sync will carry it into `feeds.xml`), and Miniflux's own fetch cycle
+  obsoletes the one-shot retry
+
 ## 2026-10-08
 
 ### Added

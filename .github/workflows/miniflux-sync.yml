@@ -87,4 +87,7 @@ jobs:
         run: uv sync --extra dev
 
       - name: Check feed health
+        env:
+          MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}
+          MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}
         run: uv run python -m scripts.check_feeds --fail-on-dead
