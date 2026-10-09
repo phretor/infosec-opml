@@ -11,6 +11,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest==9.1.1",
+    "ruff==0.16.10",
+    "ty==0.0.85",
 ]
 
 [project.scripts]
@@ -19,7 +21,18 @@ feeds-add = "scripts.add_feeds:main"
 feeds-stats = "scripts.stats:main"
 feeds-cache = "scripts.fetch_cache:main"
 feeds-miniflux-sync = "scripts.miniflux_sync:main"
+feeds-lint-opml = "scripts.lint_opml:main"
+feeds-check-readme = "scripts.check_readme:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[tool.ty]
