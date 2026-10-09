@@ -44,6 +44,15 @@ do not support nested folders.
 The live Miniflux instance retains an empty `00 🧪 Review Queue` for future triage. Miniflux omits
 empty categories from OPML exports, so the folder is not present in `feeds.xml` while it is empty.
 
+## Automated Miniflux sync
+
+`feeds.xml` is kept in sync with the live Miniflux taxonomy by a weekly GitHub Actions workflow
+(`.github/workflows/miniflux-sync.yml`, also runnable via `workflow_dispatch`). The workflow fetches
+Miniflux's OPML export, normalizes it, and — on a real diff — opens or updates a single long-lived
+PR on `bot/miniflux-sync` with the patched `feeds.xml`, README counts, and a mechanical CHANGELOG
+entry. A second job runs `scripts.check_feeds --fail-on-dead` against the resulting file; dead feeds
+block the PR as a red check, transient failures do not.
+
 ## Maintenance
 
 This repo includes Python scripts managed with [uv](https://docs.astral.sh/uv/):
@@ -52,8 +61,11 @@ This repo includes Python scripts managed with [uv](https://docs.astral.sh/uv/):
 # Show feed statistics
 uv run python -m scripts.stats
 
-# Check all feeds for broken URLs
+# Check all feeds for broken URLs (--fail-on-dead gates the CI health check)
 uv run python -m scripts.check_feeds
+
+# Reproduce a Miniflux sync locally against a saved OPML export
+uv run python -m scripts.miniflux_sync --input ./miniflux-export.opml --dry-run
 
 # Add a single feed
 uv run python -m scripts.add_feeds \

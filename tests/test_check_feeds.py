@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 import requests
 
@@ -108,7 +110,7 @@ def test_classify_batch_keeps_persistent_dead(monkeypatch: pytest.MonkeyPatch) -
     assert classified[url][0] == "dead"
 
 
-def test_fail_on_dead_exit_code(monkeypatch: pytest.MonkeyPatch, tmp_path, capsys) -> None:
+def test_fail_on_dead_exit_code(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """CLI --fail-on-dead exits non-zero when any URL stays dead after retry."""
     opml = tmp_path / "feeds.xml"
     opml.write_text(
@@ -121,14 +123,14 @@ def test_fail_on_dead_exit_code(monkeypatch: pytest.MonkeyPatch, tmp_path, capsy
     )
     monkeypatch.setattr(check_feeds, "FEEDS_XML", opml)
     monkeypatch.setattr(check_feeds.requests, "head", lambda *a, **k: _Resp(404))
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--retry-pause-seconds", "0"])
 
     with pytest.raises(SystemExit) as exc:
         check_feeds.main()
     assert exc.value.code == 1
 
 
-def test_fail_on_dead_passes_when_all_ok(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+def test_fail_on_dead_passes_when_all_ok(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     opml = tmp_path / "feeds.xml"
     opml.write_text(
         '<?xml version="1.0" encoding="UTF-8"?>'
@@ -140,7 +142,7 @@ def test_fail_on_dead_passes_when_all_ok(monkeypatch: pytest.MonkeyPatch, tmp_pa
     )
     monkeypatch.setattr(check_feeds, "FEEDS_XML", opml)
     monkeypatch.setattr(check_feeds.requests, "head", lambda *a, **k: _Resp(200))
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--retry-pause-seconds", "0"])
 
     # Returns None on success (no SystemExit raised)
     assert check_feeds.main() is None

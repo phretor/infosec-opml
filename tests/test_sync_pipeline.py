@@ -9,6 +9,7 @@ from scripts.miniflux_sync import (
     NoChange,
     SyncOutput,
     normalize_opml,
+    patch_readme,
     sync_pipeline,
 )
 
@@ -121,6 +122,14 @@ def test_empty_category_is_omitted(
     result = sync_pipeline(incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE)
 
     assert isinstance(result, NoChange)
+
+
+def test_patch_readme_raises_on_missing_anchor() -> None:
+    """A README that doesn't contain the expected sentences must fail loudly,
+    not silently emit stale counts."""
+    broken_readme = "# Totally different README\n\nNo anchor sentences here.\n"
+    with pytest.raises(ValueError, match="anchor"):
+        patch_readme(broken_readme, 1, 1)
 
 
 def test_changelog_entry_omitted_when_only_formatting_changed(

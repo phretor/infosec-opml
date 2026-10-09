@@ -160,6 +160,12 @@ def main() -> None:
         action="store_true",
         help="Exit non-zero if any feed is classified dead after the retry pass",
     )
+    parser.add_argument(
+        "--retry-pause-seconds",
+        type=float,
+        default=RETRY_PAUSE_SECONDS,
+        help="Seconds to pause before retrying initially-dead URLs",
+    )
     args = parser.parse_args()
 
     if not FEEDS_XML.exists():
@@ -177,7 +183,7 @@ def main() -> None:
     print(f"Feeds: {len(feeds)} entries, {len(unique_urls)} unique URLs\n")
     print("Checking feed URLs ...\n")
 
-    classified = classify_batch(list(unique_urls))
+    classified = classify_batch(list(unique_urls), pause_seconds=args.retry_pause_seconds)
     results: dict[str, list[dict]] = {"ok": [], "dead": [], "transient": []}
     for url, (bucket, status) in classified.items():
         results[bucket].append({"url": url, "status": status, "feeds": unique_urls[url]})

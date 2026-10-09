@@ -31,6 +31,7 @@ CHANGELOG = REPO_ROOT / "CHANGELOG.md"
 
 FEED_ATTR_ORDER = ("text", "title", "type", "xmlUrl", "htmlUrl")
 FOLDER_ATTR_ORDER = ("text", "title")
+OPML_TITLE = "Information and Cyber Security RSS/Atom Feeds"
 
 
 @dataclass(frozen=True)
@@ -109,7 +110,7 @@ def _attr_fragment(outline: ET.Element, order: tuple[str, ...]) -> str:
     return " ".join(parts)
 
 
-def normalize_opml(opml_text: str, title: str = "Information and Cyber Security RSS/Atom Feeds") -> str:
+def normalize_opml(opml_text: str) -> str:
     """Produce a stable 2-space-indented OPML 1.0 string from any OPML input.
 
     Attribute emission order is fixed: `text, title, type, xmlUrl, htmlUrl` on
@@ -123,7 +124,7 @@ def normalize_opml(opml_text: str, title: str = "Information and Cyber Security 
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<opml version="1.0">',
         "  <head>",
-        f"    <title>{escape(title)}</title>",
+        f"    <title>{escape(OPML_TITLE)}</title>",
         "  </head>",
         "  <body>",
     ]
@@ -152,19 +153,6 @@ def normalize_opml(opml_text: str, title: str = "Information and Cyber Security 
     return "\n".join(lines)
 
 
-def _count_folders(opml_text: str) -> int:
-    root = ET.fromstring(opml_text)
-    body = root.find("body")
-    if body is None:
-        return 0
-    return sum(
-        1
-        for folder in body
-        if folder.tag == "outline"
-        and any(c.tag == "outline" and c.get("xmlUrl") for c in folder)
-    )
-
-
 def diff_feeds(
     current: list[Feed], incoming: list[Feed]
 ) -> tuple[tuple[Feed, ...], tuple[Feed, ...]]:
@@ -182,19 +170,34 @@ def diff_feeds(
 
 
 def patch_readme(readme_text: str, feed_count: int, folder_count: int) -> str:
-    """Rewrite the feed-count and folder-count sentences in the README."""
-    out = re.sub(
+    """Rewrite the feed-count and folder-count sentences in the README.
+
+    Raises ValueError when either anchor sentence is missing, so a drifted
+    README surfaces as a workflow failure rather than silently shipping stale
+    counts.
+    """
+    out, feed_hits = re.subn(
         r"collection of \d+ information security",
         f"collection of {feed_count} information security",
         readme_text,
         count=1,
     )
-    out = re.sub(
+    out, folder_hits = re.subn(
         r"organized into \d+ permanent, flat folders",
         f"organized into {folder_count} permanent, flat folders",
         out,
         count=1,
     )
+    if feed_hits == 0 or folder_hits == 0:
+        missing = []
+        if feed_hits == 0:
+            missing.append("feed-count")
+        if folder_hits == 0:
+            missing.append("folder-count")
+        raise ValueError(
+            f"README anchor sentence(s) not found: {', '.join(missing)}. "
+            "Restore the sentence or update patch_readme."
+        )
     return out
 
 
@@ -259,7 +262,7 @@ def sync_pipeline(
     added, removed = diff_feeds(current_feeds, incoming_feeds)
 
     feed_count = len(incoming_feeds)
-    folder_count = _count_folders(normalized)
+    folder_count = len({f.folder for f in incoming_feeds})
 
     new_readme = patch_readme(current_readme, feed_count, folder_count)
 
@@ -300,10 +303,6 @@ def main() -> int:
         help="Read OPML from file instead of fetching Miniflux (for local testing)",
     )
     parser.add_argument(
-        "--date",
-        help="Override sync date as YYYY-MM-DD (default: today, UTC)",
-    )
-    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print the planned action; do not write files",
@@ -323,11 +322,7 @@ def main() -> int:
             return 2
         opml_text = fetch_miniflux_opml(base, token)
 
-    sync_date = (
-        date_type.fromisoformat(args.date)
-        if args.date
-        else datetime.now(tz=UTC).date()
-    )
+    sync_date = datetime.now(tz=UTC).date()
 
     current_feeds_xml = FEEDS_XML.read_text(encoding="utf-8") if FEEDS_XML.exists() else ""
     current_readme = README.read_text(encoding="utf-8") if README.exists() else ""

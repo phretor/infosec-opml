@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-08
+
+### Added
+- `.github/workflows/miniflux-sync.yml`: weekly + on-demand sync of `feeds.xml` from Miniflux via a
+  single long-lived PR on `bot/miniflux-sync`, with a feed-health gate (`--fail-on-dead`) running
+  on the resulting file in the same workflow run
+- `scripts/miniflux_sync.py` and `feeds-miniflux-sync` entry point: pure `sync_pipeline`, OPML
+  normalizer (2-space indent, fixed attribute order, empty folders dropped), README/CHANGELOG
+  patchers
+- `scripts/check_feeds.py`: `--fail-on-dead` flag and a one-shot retry pass that promotes
+  initially-dead URLs out of the dead set on recovery
+- `tests/` tree with pytest fixtures covering the sync pipeline and the health classifier/CLI
+
 ## 2026-08-18
 
 ### Changed

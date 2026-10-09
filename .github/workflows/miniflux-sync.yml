@@ -18,7 +18,7 @@ jobs:
     name: Sync Miniflux into feeds.xml
     runs-on: ubuntu-latest
     outputs:
-      changed: ${{ steps.sync.outputs.changed }}
+      pr_head_sha: ${{ steps.cpr.outputs.pull-request-head-sha }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -49,6 +49,7 @@ jobs:
           fi
 
       - name: Open or update sync PR
+        id: cpr
         if: steps.sync.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # v8.1.1
         with:
@@ -64,9 +65,6 @@ jobs:
             - OPML normalized via `scripts.miniflux_sync`
 
             Health-check results appear as a separate check on the PR head SHA.
-          labels: |
-            automated
-            miniflux-sync
 
   health:
     name: Feed health check
@@ -76,7 +74,7 @@ jobs:
       - name: Check out resulting feeds.xml
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          ref: ${{ needs.sync.outputs.changed == 'true' && 'bot/miniflux-sync' || github.ref }}
+          ref: ${{ needs.sync.outputs.pr_head_sha || github.ref }}
           persist-credentials: false
 
       - name: Set up uv
