@@ -326,9 +326,13 @@ def main() -> int:
 
     current_feeds_xml = FEEDS_XML.read_text(encoding="utf-8") if FEEDS_XML.exists() else ""
     current_readme = README.read_text(encoding="utf-8") if README.exists() else ""
-    current_changelog = CHANGELOG.read_text(encoding="utf-8") if CHANGELOG.exists() else "# Changelog\n\n"
+    current_changelog = (
+        CHANGELOG.read_text(encoding="utf-8") if CHANGELOG.exists() else "# Changelog\n\n"
+    )
 
-    result = sync_pipeline(opml_text, current_feeds_xml, current_readme, current_changelog, sync_date)
+    result = sync_pipeline(
+        opml_text, current_feeds_xml, current_readme, current_changelog, sync_date
+    )
 
     if isinstance(result, NoChange):
         print("No change: normalized Miniflux output matches feeds.xml.")

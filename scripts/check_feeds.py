@@ -73,33 +73,38 @@ def parse_feeds(path: Path) -> list[FeedRow]:
     return rows
 
 
-def fetch_miniflux_feeds(
-    base_url: str, api_token: str, client: httpx.Client | None = None
+def _fetch_feeds_via(
+    client: httpx.Client, base_url: str, api_token: str
 ) -> dict[str, MinifluxStatus]:
-    """GET /v1/feeds, returning {feed_url: MinifluxStatus}.
-
-    Takes an optional httpx client so tests can inject MockTransport.
-    """
-    url = base_url.rstrip("/") + "/v1/feeds"
-    headers = {"X-Auth-Token": api_token}
-    owned = client is None
-    if client is None:
-        client = httpx.Client(timeout=HTTP_TIMEOUT, follow_redirects=True)
-    try:
-        resp = client.get(url, headers=headers)
-        resp.raise_for_status()
-        payload = resp.json()
-    finally:
-        if owned:
-            client.close()
+    """Core fetch over a caller-owned client; see fetch_miniflux_feeds."""
+    resp = client.get(
+        base_url.rstrip("/") + "/v1/feeds",
+        headers={"X-Auth-Token": api_token},
+    )
+    resp.raise_for_status()
     return {
         row["feed_url"]: MinifluxStatus(
             disabled=bool(row.get("disabled", False)),
             parsing_error_count=int(row.get("parsing_error_count", 0)),
             parsing_error_message=str(row.get("parsing_error_message", "")),
         )
-        for row in payload
+        for row in resp.json()
     }
+
+
+def fetch_miniflux_feeds(
+    base_url: str, api_token: str, client: httpx.Client | None = None
+) -> dict[str, MinifluxStatus]:
+    """GET /v1/feeds, returning {feed_url: MinifluxStatus}.
+
+    If `client` is passed in, the caller owns its lifetime (used by tests to
+    inject a MockTransport). Otherwise a short-lived client is opened and
+    closed here.
+    """
+    if client is not None:
+        return _fetch_feeds_via(client, base_url, api_token)
+    with httpx.Client(timeout=HTTP_TIMEOUT, follow_redirects=True) as owned:
+        return _fetch_feeds_via(owned, base_url, api_token)
 
 
 def classify(status: MinifluxStatus | None, min_error_count: int) -> Verdict:
@@ -121,17 +126,27 @@ def classify_feeds(
     min_error_count: int,
 ) -> list[ClassifiedFeed]:
     """Apply classify() to each feed in feeds.xml."""
-    return [
-        ClassifiedFeed(
-            feed=f,
-            verdict=classify(miniflux_by_url.get(f.xml_url), min_error_count),
-            status=miniflux_by_url.get(f.xml_url),
+    out: list[ClassifiedFeed] = []
+    for f in feeds:
+        status = miniflux_by_url.get(f.xml_url)
+        out.append(
+            ClassifiedFeed(
+                feed=f,
+                verdict=classify(status, min_error_count),
+                status=status,
+            )
         )
-        for f in feeds
-    ]
+    return out
 
 
 def print_section(title: str, entries: list[ClassifiedFeed]) -> None:
+    """Render a classified bucket to stdout, sorted by folder then feed name.
+
+    Each entry prints the verdict in a right-aligned 12-char column followed
+    by the feed URL, the feed name and folder, and (when known) Miniflux's
+    error count, disabled flag, and a trimmed message snippet. Empty buckets
+    render nothing so the top-level section headers stay informative.
+    """
     if not entries:
         return
     entries = sorted(entries, key=lambda e: (e.feed.folder, e.feed.name))
@@ -209,10 +224,13 @@ def main() -> None:
         "DEAD FEEDS (disabled, over error threshold, or missing from Miniflux)",
         buckets["dead"],
     )
-    print_section(
-        f"TRANSIENT ERRORS (parsing_error_count 1-{args.min_error_count - 1})",
-        buckets["transient"],
-    )
+    if args.min_error_count <= 1:
+        transient_title = "TRANSIENT ERRORS (none at this threshold)"
+    else:
+        transient_title = (
+            f"TRANSIENT ERRORS (parsing_error_count 1-{args.min_error_count - 1})"
+        )
+    print_section(transient_title, buckets["transient"])
 
     if args.fail_on_dead and buckets["dead"]:
         sys.exit(1)
