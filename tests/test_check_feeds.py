@@ -1,129 +1,148 @@
-"""Tests for the feed health classifier and retry pass."""
+"""Tests for the Miniflux-API-driven feed health classifier."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
+import httpx
 import pytest
-import requests
 
 from scripts import check_feeds
 
 
-class _Resp:
-    def __init__(self, status_code: int) -> None:
-        self.status_code = status_code
+def _mock_client(feeds_payload: list[dict]) -> httpx.Client:
+    """Return an httpx.Client whose /v1/feeds returns the given payload."""
 
-    def close(self) -> None:
-        pass
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.path == "/v1/feeds"
+        assert request.headers.get("X-Auth-Token") == "test-token"
+        return httpx.Response(200, content=json.dumps(feeds_payload))
 
-
-@pytest.mark.parametrize(
-    ("status", "bucket"),
-    [
-        (200, "ok"),
-        (301, "ok"),
-        (404, "dead"),
-        (403, "dead"),
-        (500, "transient"),
-        (503, "transient"),
-        (429, "transient"),
-        ("timeout", "transient"),
-        ("ssl_error", "dead"),
-        ("conn_error", "dead"),
-    ],
-)
-def test_classify(status: int | str, bucket: str) -> None:
-    assert check_feeds.classify(status) == bucket
+    return httpx.Client(transport=httpx.MockTransport(handler))
 
 
-def test_check_url_200(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(check_feeds.requests, "head", lambda *a, **k: _Resp(200))
-    assert check_feeds.check_url("https://example.com/feed") == ("https://example.com/feed", 200)
+def test_classify_ok() -> None:
+    status = check_feeds.MinifluxStatus(disabled=False, parsing_error_count=0, parsing_error_message="")
+    assert check_feeds.classify(status, min_error_count=3) == "ok"
 
 
-def test_check_url_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
-    def raise_timeout(*_a: object, **_k: object) -> None:
-        raise requests.exceptions.Timeout()
+def test_classify_transient_below_threshold() -> None:
+    status = check_feeds.MinifluxStatus(disabled=False, parsing_error_count=2, parsing_error_message="boom")
+    assert check_feeds.classify(status, min_error_count=3) == "transient"
 
-    monkeypatch.setattr(check_feeds.requests, "head", raise_timeout)
-    assert check_feeds.check_url("https://example.com/feed") == (
-        "https://example.com/feed",
-        "timeout",
+
+def test_classify_dead_at_threshold() -> None:
+    status = check_feeds.MinifluxStatus(disabled=False, parsing_error_count=3, parsing_error_message="boom")
+    assert check_feeds.classify(status, min_error_count=3) == "dead"
+
+
+def test_classify_dead_when_disabled_regardless_of_count() -> None:
+    status = check_feeds.MinifluxStatus(disabled=True, parsing_error_count=0, parsing_error_message="")
+    assert check_feeds.classify(status, min_error_count=3) == "dead"
+
+
+def test_classify_dead_when_missing_from_miniflux() -> None:
+    assert check_feeds.classify(None, min_error_count=3) == "dead"
+
+
+def test_fetch_miniflux_feeds_builds_map() -> None:
+    client = _mock_client(
+        [
+            {
+                "feed_url": "https://a.example/feed",
+                "disabled": False,
+                "parsing_error_count": 0,
+                "parsing_error_message": "",
+            },
+            {
+                "feed_url": "https://b.example/feed",
+                "disabled": True,
+                "parsing_error_count": 5,
+                "parsing_error_message": "gone",
+            },
+        ]
     )
+    result = check_feeds.fetch_miniflux_feeds("https://mf.example", "test-token", client=client)
+    assert set(result) == {"https://a.example/feed", "https://b.example/feed"}
+    assert result["https://b.example/feed"].disabled is True
+    assert result["https://b.example/feed"].parsing_error_count == 5
 
 
-def test_check_url_ssl(monkeypatch: pytest.MonkeyPatch) -> None:
-    def raise_ssl(*_a: object, **_k: object) -> None:
-        raise requests.exceptions.SSLError()
-
-    monkeypatch.setattr(check_feeds.requests, "head", raise_ssl)
-    assert check_feeds.check_url("https://example.com/feed") == (
-        "https://example.com/feed",
-        "ssl_error",
-    )
-
-
-def test_check_url_conn_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    def raise_conn(*_a: object, **_k: object) -> None:
-        raise requests.exceptions.ConnectionError()
-
-    monkeypatch.setattr(check_feeds.requests, "head", raise_conn)
-    assert check_feeds.check_url("https://example.com/feed") == (
-        "https://example.com/feed",
-        "conn_error",
-    )
+def _write_feeds_xml(path: Path, urls_with_folders: list[tuple[str, str, str]]) -> None:
+    """Write a minimal feeds.xml with [(name, xmlUrl, folder), ...]."""
+    folders: dict[str, list[tuple[str, str]]] = {}
+    for name, url, folder in urls_with_folders:
+        folders.setdefault(folder, []).append((name, url))
+    body_parts = ['<?xml version="1.0" encoding="UTF-8"?>', '<opml version="1.0">']
+    body_parts.append("  <head><title>t</title></head>")
+    body_parts.append("  <body>")
+    for folder, feeds in folders.items():
+        body_parts.append(f'    <outline text="{folder}">')
+        for name, url in feeds:
+            body_parts.append(
+                f'      <outline text="{name}" type="rss" xmlUrl="{url}" htmlUrl="{url}"></outline>'
+            )
+        body_parts.append("    </outline>")
+    body_parts.append("  </body>")
+    body_parts.append("</opml>")
+    path.write_text("\n".join(body_parts) + "\n", encoding="utf-8")
 
 
-def test_check_url_head_403_falls_back_to_get(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(check_feeds.requests, "head", lambda *a, **k: _Resp(403))
-    monkeypatch.setattr(check_feeds.requests, "get", lambda *a, **k: _Resp(200))
-    assert check_feeds.check_url("https://example.com/feed") == (
-        "https://example.com/feed",
-        200,
-    )
+def test_fail_on_dead_exit_code_disabled(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Broken", "https://x.example/feed", "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
+
+    def fake_fetch(base: str, token: str) -> dict[str, check_feeds.MinifluxStatus]:
+        return {
+            "https://x.example/feed": check_feeds.MinifluxStatus(
+                disabled=True, parsing_error_count=0, parsing_error_message=""
+            )
+        }
+
+    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", fake_fetch)
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+
+    with pytest.raises(SystemExit) as exc:
+        check_feeds.main()
+    assert exc.value.code == 1
 
 
-def test_classify_batch_promotes_retry_success(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A URL that returns 403 then 200 on retry should land in 'ok', not 'dead'."""
-    url = "https://example.com/flaky"
-    calls: list[int] = []
+def test_fail_on_dead_exit_code_over_threshold(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Flaky", "https://y.example/feed", "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
 
-    def flaky_head(*_a: object, **_k: object) -> _Resp:
-        calls.append(1)
-        return _Resp(403 if len(calls) == 1 else 200)
+    def fake_fetch(base: str, token: str) -> dict[str, check_feeds.MinifluxStatus]:
+        return {
+            "https://y.example/feed": check_feeds.MinifluxStatus(
+                disabled=False, parsing_error_count=5, parsing_error_message="404"
+            )
+        }
 
-    def flaky_get(*_a: object, **_k: object) -> _Resp:
-        return _Resp(403 if len(calls) == 1 else 200)
+    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", fake_fetch)
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--min-error-count", "3"])
 
-    monkeypatch.setattr(check_feeds.requests, "head", flaky_head)
-    monkeypatch.setattr(check_feeds.requests, "get", flaky_get)
-
-    classified = check_feeds.classify_batch([url], pause_seconds=0)
-    assert classified[url][0] == "ok"
-
-
-def test_classify_batch_keeps_persistent_dead(monkeypatch: pytest.MonkeyPatch) -> None:
-    url = "https://example.com/gone"
-    monkeypatch.setattr(check_feeds.requests, "head", lambda *a, **k: _Resp(404))
-    classified = check_feeds.classify_batch([url], pause_seconds=0)
-    assert classified[url][0] == "dead"
+    with pytest.raises(SystemExit) as exc:
+        check_feeds.main()
+    assert exc.value.code == 1
 
 
-def test_fail_on_dead_exit_code(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    """CLI --fail-on-dead exits non-zero when any URL stays dead after retry."""
-    opml = tmp_path / "feeds.xml"
-    opml.write_text(
-        '<?xml version="1.0" encoding="UTF-8"?>'
-        '<opml version="1.0"><head><title>t</title></head><body>'
-        '<outline text="F"><outline type="rss" text="broken" '
-        'xmlUrl="https://example.com/gone" htmlUrl="https://example.com/"></outline>'
-        "</outline></body></opml>",
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(check_feeds, "FEEDS_XML", opml)
-    monkeypatch.setattr(check_feeds.requests, "head", lambda *a, **k: _Resp(404))
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--retry-pause-seconds", "0"])
+def test_fail_on_dead_exit_code_missing_from_miniflux(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Ghost", "https://z.example/feed", "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
+    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *a, **k: {})
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
 
     with pytest.raises(SystemExit) as exc:
         check_feeds.main()
@@ -131,18 +150,53 @@ def test_fail_on_dead_exit_code(monkeypatch: pytest.MonkeyPatch, tmp_path: Path)
 
 
 def test_fail_on_dead_passes_when_all_ok(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    opml = tmp_path / "feeds.xml"
-    opml.write_text(
-        '<?xml version="1.0" encoding="UTF-8"?>'
-        '<opml version="1.0"><head><title>t</title></head><body>'
-        '<outline text="F"><outline type="rss" text="live" '
-        'xmlUrl="https://example.com/live" htmlUrl="https://example.com/"></outline>'
-        "</outline></body></opml>",
-        encoding="utf-8",
-    )
-    monkeypatch.setattr(check_feeds, "FEEDS_XML", opml)
-    monkeypatch.setattr(check_feeds.requests, "head", lambda *a, **k: _Resp(200))
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--retry-pause-seconds", "0"])
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Healthy", "https://ok.example/feed", "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
 
-    # Returns None on success (no SystemExit raised)
+    def fake_fetch(base: str, token: str) -> dict[str, check_feeds.MinifluxStatus]:
+        return {
+            "https://ok.example/feed": check_feeds.MinifluxStatus(
+                disabled=False, parsing_error_count=0, parsing_error_message=""
+            )
+        }
+
+    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", fake_fetch)
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+
     assert check_feeds.main() is None
+
+
+def test_transient_does_not_fail(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Flaky", "https://flake.example/feed", "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
+
+    def fake_fetch(base: str, token: str) -> dict[str, check_feeds.MinifluxStatus]:
+        return {
+            "https://flake.example/feed": check_feeds.MinifluxStatus(
+                disabled=False, parsing_error_count=1, parsing_error_message="single blip"
+            )
+        }
+
+    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", fake_fetch)
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--min-error-count", "3"])
+
+    assert check_feeds.main() is None
+
+
+def test_main_errors_without_credentials(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("x", "https://x.example/feed", "f")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.delenv("MINIFLUX_URL", raising=False)
+    monkeypatch.delenv("MINIFLUX_TOKEN", raising=False)
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+
+    with pytest.raises(SystemExit) as exc:
+        check_feeds.main()
+    assert exc.value.code == 2

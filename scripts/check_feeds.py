@@ -1,211 +1,220 @@
-"""Check all feeds in feeds.xml for HTTP health status, optionally removing dead ones."""
+"""Classify RSS/Atom feed health using Miniflux as the source of truth.
+
+Miniflux already polls every feed on its own schedule and tracks parsing errors
+with a stable `parsing_error_count` field. We read that view instead of probing
+URLs from the CI runner, which was unreliable because many hosts return 4xx/429
+to generic cloud IPs for feeds that are perfectly healthy from Miniflux's end.
+"""
+
+from __future__ import annotations
 
 import argparse
+import os
 import sys
-import time
 import xml.etree.ElementTree as ET
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
-import requests
+import httpx
 
 FEEDS_XML = Path(__file__).resolve().parent.parent / "feeds.xml"
-TIMEOUT = 10
-MAX_WORKERS = 20
-USER_AGENT = "Mozilla/5.0 RSS Feed Checker"
-RETRY_PAUSE_SECONDS = 5
+DEFAULT_MIN_ERROR_COUNT = 3
+HTTP_TIMEOUT = 30.0
+
+Verdict = Literal["ok", "transient", "dead"]
 
 
-def parse_feeds(path: Path) -> list[dict]:
+@dataclass(frozen=True)
+class FeedRow:
+    """A feed from feeds.xml, independent of Miniflux knowledge."""
+
+    name: str
+    xml_url: str
+    folder: str
+
+
+@dataclass(frozen=True)
+class MinifluxStatus:
+    """Just the health-relevant subset of Miniflux's feed record."""
+
+    disabled: bool
+    parsing_error_count: int
+    parsing_error_message: str
+
+
+@dataclass(frozen=True)
+class ClassifiedFeed:
+    """Classification outcome for one feed in feeds.xml."""
+
+    feed: FeedRow
+    verdict: Verdict
+    status: MinifluxStatus | None  # None iff feed is missing from Miniflux
+
+
+def parse_feeds(path: Path) -> list[FeedRow]:
+    """Parse feeds.xml into FeedRow objects, flat list across all folders."""
     tree = ET.parse(path)
-    feeds = []
-    for folder in tree.getroot().find("body"):
+    rows: list[FeedRow] = []
+    body = tree.getroot().find("body")
+    if body is None:
+        return rows
+    for folder in body:
         folder_name = folder.get("text", "")
         for feed in folder:
-            if feed.get("type") == "rss":
-                feeds.append(
-                    {
-                        "name": feed.get("text", ""),
-                        "xmlUrl": feed.get("xmlUrl", ""),
-                        "htmlUrl": feed.get("htmlUrl", ""),
-                        "folder": folder_name,
-                    }
+            if feed.get("type") == "rss" and feed.get("xmlUrl"):
+                rows.append(
+                    FeedRow(
+                        name=feed.get("text", ""),
+                        xml_url=feed.get("xmlUrl", ""),
+                        folder=folder_name,
+                    )
                 )
-    return feeds
+    return rows
 
 
-def check_url(url: str) -> tuple[str, int | str]:
-    if not url.startswith(("http://", "https://")):
-        return url, "skip"
-    headers = {"User-Agent": USER_AGENT}
+def fetch_miniflux_feeds(
+    base_url: str, api_token: str, client: httpx.Client | None = None
+) -> dict[str, MinifluxStatus]:
+    """GET /v1/feeds, returning {feed_url: MinifluxStatus}.
+
+    Takes an optional httpx client so tests can inject MockTransport.
+    """
+    url = base_url.rstrip("/") + "/v1/feeds"
+    headers = {"X-Auth-Token": api_token}
+    owned = client is None
+    if client is None:
+        client = httpx.Client(timeout=HTTP_TIMEOUT, follow_redirects=True)
     try:
-        r = requests.head(url, timeout=TIMEOUT, headers=headers, allow_redirects=True)
-        if r.status_code in (403, 405):
-            # Some servers reject HEAD; retry with streaming GET to avoid downloading body
-            r = requests.get(url, timeout=TIMEOUT, headers=headers, allow_redirects=True, stream=True)
-            r.close()
-        return url, r.status_code
-    except requests.exceptions.SSLError:
-        return url, "ssl_error"
-    except requests.exceptions.Timeout:
-        return url, "timeout"
-    except requests.exceptions.ConnectionError:
-        return url, "conn_error"
-    except Exception as e:
-        return url, str(e)[:50]
+        resp = client.get(url, headers=headers)
+        resp.raise_for_status()
+        payload = resp.json()
+    finally:
+        if owned:
+            client.close()
+    return {
+        row["feed_url"]: MinifluxStatus(
+            disabled=bool(row.get("disabled", False)),
+            parsing_error_count=int(row.get("parsing_error_count", 0)),
+            parsing_error_message=str(row.get("parsing_error_message", "")),
+        )
+        for row in payload
+    }
 
 
-def classify(status: int | str) -> str:
-    """Return 'ok', 'dead', or 'transient'."""
-    if isinstance(status, int):
-        if 200 <= status < 400:
-            return "ok"
-        if status == 429 or status >= 500:
-            return "transient"
-        return "dead"  # 4xx: resource gone or permanently inaccessible
-    return "transient" if status == "timeout" else "dead"
+def classify(status: MinifluxStatus | None, min_error_count: int) -> Verdict:
+    """Classify one feed given its Miniflux status (or None if missing)."""
+    if status is None:
+        return "dead"
+    if status.disabled:
+        return "dead"
+    if status.parsing_error_count >= min_error_count:
+        return "dead"
+    if status.parsing_error_count > 0:
+        return "transient"
+    return "ok"
 
 
-def remove_feeds(path: Path, dead_urls: set[str]) -> tuple[int, int]:
-    """Remove feed outlines from the OPML file. Returns (feeds_removed, folders_removed)."""
-    tree = ET.parse(path)
-    root = tree.getroot()
-    body = root.find("body")
-
-    feeds_removed = 0
-    folders_removed = 0
-
-    for folder in list(body):
-        for feed in list(folder):
-            if feed.get("xmlUrl") in dead_urls:
-                folder.remove(feed)
-                feeds_removed += 1
-        if len(folder) == 0:
-            body.remove(folder)
-            folders_removed += 1
-
-    ET.indent(root, space="  ")
-    xml_str = ET.tostring(root, encoding="unicode")
-    path.write_text(f"<?xml version='1.0' encoding='UTF-8'?>\n{xml_str}\n", encoding="utf-8")
-
-    return feeds_removed, folders_removed
+def classify_feeds(
+    feeds: list[FeedRow],
+    miniflux_by_url: dict[str, MinifluxStatus],
+    min_error_count: int,
+) -> list[ClassifiedFeed]:
+    """Apply classify() to each feed in feeds.xml."""
+    return [
+        ClassifiedFeed(
+            feed=f,
+            verdict=classify(miniflux_by_url.get(f.xml_url), min_error_count),
+            status=miniflux_by_url.get(f.xml_url),
+        )
+        for f in feeds
+    ]
 
 
-def print_section(title: str, entries: list[dict]) -> None:
+def print_section(title: str, entries: list[ClassifiedFeed]) -> None:
     if not entries:
         return
-    entries.sort(key=lambda e: str(e["status"]))
+    entries = sorted(entries, key=lambda e: (e.feed.folder, e.feed.name))
     print("=" * 80)
     print(title)
     print("=" * 80)
     for e in entries:
-        names = ", ".join(f["name"] for f in e["feeds"])
-        folders = ", ".join(f["folder"] for f in e["feeds"])
-        print(f"  [{e['status']:>12}]  {e['url']}")
-        print(f"                 Feed(s): {names}")
-        print(f"                 Folder(s): {folders}")
+        label = e.verdict
+        print(f"  [{label:>12}]  {e.feed.xml_url}")
+        print(f"                 Feed: {e.feed.name}")
+        print(f"                 Folder: {e.feed.folder}")
+        if e.status is None:
+            print("                 Miniflux: feed not found")
+        else:
+            count = e.status.parsing_error_count
+            msg = e.status.parsing_error_message.strip().replace("\n", " ")
+            msg_snippet = msg[:120] + ("…" if len(msg) > 120 else "")
+            disabled_tag = " (disabled)" if e.status.disabled else ""
+            print(f"                 Miniflux: {count} error(s){disabled_tag}")
+            if msg_snippet:
+                print(f"                 Message: {msg_snippet}")
         print()
 
 
-def check_urls(urls: list[str], max_workers: int = MAX_WORKERS) -> dict[str, int | str]:
-    """Concurrently check a list of URLs. Returns {url: status}."""
-    results: dict[str, int | str] = {}
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = {pool.submit(check_url, url): url for url in urls}
-        for future in as_completed(futures):
-            url, status = future.result()
-            if status != "skip":
-                results[url] = status
-    return results
-
-
-def classify_batch(
-    urls: list[str], max_workers: int = MAX_WORKERS, pause_seconds: float = RETRY_PAUSE_SECONDS
-) -> dict[str, tuple[str, int | str]]:
-    """Classify URLs as ok/dead/transient with a one-shot retry on initially-dead ones.
-
-    Returns {url: (bucket, status)}. Dead URLs are retried once after a short
-    pause; successful retries are promoted out of the dead set.
-    """
-    initial = check_urls(urls, max_workers=max_workers)
-    classified: dict[str, tuple[str, int | str]] = {
-        url: (classify(status), status) for url, status in initial.items()
-    }
-
-    dead_urls = [url for url, (bucket, _) in classified.items() if bucket == "dead"]
-    if dead_urls:
-        time.sleep(pause_seconds)
-        retry = check_urls(dead_urls, max_workers=max_workers)
-        for url, status in retry.items():
-            new_bucket = classify(status)
-            if new_bucket != "dead":
-                classified[url] = (new_bucket, status)
-    return classified
-
-
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Check RSS/Atom feed health in feeds.xml")
-    parser.add_argument(
-        "--remove",
-        action="store_true",
-        help="Remove dead feeds (4xx, conn_error, ssl_error) from feeds.xml",
-    )
-    parser.add_argument(
-        "--remove-all",
-        action="store_true",
-        help="Remove all erroring feeds including transient failures (timeouts, 5xx, 429)",
+    parser = argparse.ArgumentParser(
+        description="Classify RSS/Atom feed health using Miniflux's API"
     )
     parser.add_argument(
         "--fail-on-dead",
         action="store_true",
-        help="Exit non-zero if any feed is classified dead after the retry pass",
+        help="Exit non-zero if any feed in feeds.xml is classified dead",
     )
     parser.add_argument(
-        "--retry-pause-seconds",
-        type=float,
-        default=RETRY_PAUSE_SECONDS,
-        help="Seconds to pause before retrying initially-dead URLs",
+        "--min-error-count",
+        type=int,
+        default=DEFAULT_MIN_ERROR_COUNT,
+        help=(
+            "Parsing-error threshold at which a feed is dead "
+            f"(default: {DEFAULT_MIN_ERROR_COUNT})"
+        ),
     )
     args = parser.parse_args()
 
     if not FEEDS_XML.exists():
-        print(f"Error: {FEEDS_XML} not found", file=sys.stderr)
+        print(f"error: {FEEDS_XML} not found", file=sys.stderr)
         sys.exit(1)
 
+    base = os.environ.get("MINIFLUX_URL")
+    token = os.environ.get("MINIFLUX_TOKEN")
+    if not base or not token:
+        print(
+            "error: MINIFLUX_URL and MINIFLUX_TOKEN must be set",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+
     feeds = parse_feeds(FEEDS_XML)
-    unique_urls: dict[str, list[dict]] = {}
-    for f in feeds:
-        url = f["xmlUrl"]
-        if url not in unique_urls:
-            unique_urls[url] = []
-        unique_urls[url].append(f)
+    miniflux = fetch_miniflux_feeds(base, token)
+    classified = classify_feeds(feeds, miniflux, args.min_error_count)
 
-    print(f"Feeds: {len(feeds)} entries, {len(unique_urls)} unique URLs\n")
-    print("Checking feed URLs ...\n")
+    buckets: dict[Verdict, list[ClassifiedFeed]] = {"ok": [], "transient": [], "dead": []}
+    for c in classified:
+        buckets[c.verdict].append(c)
 
-    classified = classify_batch(list(unique_urls), pause_seconds=args.retry_pause_seconds)
-    results: dict[str, list[dict]] = {"ok": [], "dead": [], "transient": []}
-    for url, (bucket, status) in classified.items():
-        results[bucket].append({"url": url, "status": status, "feeds": unique_urls[url]})
+    print(f"Feeds: {len(feeds)} in feeds.xml, {len(miniflux)} in Miniflux\n")
+    print(
+        f"Results: {len(buckets['ok'])} OK, "
+        f"{len(buckets['dead'])} dead, "
+        f"{len(buckets['transient'])} transient "
+        f"(threshold: parsing_error_count >= {args.min_error_count})\n"
+    )
 
-    ok, dead, transient = len(results["ok"]), len(results["dead"]), len(results["transient"])
-    print(f"\nResults: {ok} OK, {dead} dead, {transient} transient\n")
+    print_section(
+        "DEAD FEEDS (disabled, over error threshold, or missing from Miniflux)",
+        buckets["dead"],
+    )
+    print_section(
+        f"TRANSIENT ERRORS (parsing_error_count 1-{args.min_error_count - 1})",
+        buckets["transient"],
+    )
 
-    print_section("DEAD FEEDS (4xx errors, connection failures)", results["dead"])
-    print_section("TRANSIENT ERRORS (timeouts, 5xx, rate-limited)", results["transient"])
-
-    if args.remove or args.remove_all:
-        to_remove = {e["url"] for e in results["dead"]}
-        if args.remove_all:
-            to_remove |= {e["url"] for e in results["transient"]}
-        if to_remove:
-            feeds_removed, folders_removed = remove_feeds(FEEDS_XML, to_remove)
-            label = "dead + transient" if args.remove_all else "dead"
-            print(f"Removed {feeds_removed} {label} feed(s), {folders_removed} empty folder(s)")
-        else:
-            print("Nothing to remove.")
-
-    if args.fail_on_dead and dead > 0:
+    if args.fail_on_dead and buckets["dead"]:
         sys.exit(1)
 
 
