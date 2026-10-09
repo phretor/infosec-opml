@@ -743,8 +743,8 @@
       <outline text="Vultr Blogs" title="Vultr Blogs" type="rss" xmlUrl="https://blogs.vultr.com/rss.xml" htmlUrl="https://blogs.vultr.com"></outline>
     </outline>
     <outline text="22 💻 Tech, AI &amp; Science">
-      <outline text="Jorenar --blog" title="Jorenar --blog" type="rss" xmlUrl="https://jorenar.com/blog/feed.xml" htmlUrl="https://jorenar.com/blog/"></outline>
       <outline text="Jorenar --blog" title="Jorenar --blog" type="rss" xmlUrl="https://jorenar.com/blog/feed" htmlUrl="https://jorenar.com/blog/"></outline>
+      <outline text="Jorenar --blog" title="Jorenar --blog" type="rss" xmlUrl="https://jorenar.com/blog/feed.xml" htmlUrl="https://jorenar.com/blog/"></outline>
       <outline text="!important" title="!important" type="rss" xmlUrl="https://mattfrisbie.substack.com/feed" htmlUrl="https://mattfrisbie.substack.com"></outline>
       <outline text="9to5Mac" title="9to5Mac" type="rss" xmlUrl="https://9to5mac.com/feed/" htmlUrl="https://9to5mac.com/"></outline>
       <outline text="Anthropic Engineering" title="Anthropic Engineering" type="rss" xmlUrl="https://rsshub.isrss.com/anthropic/engineering" htmlUrl="https://www.anthropic.com/engineering"></outline>
