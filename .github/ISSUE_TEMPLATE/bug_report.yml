@@ -1,0 +1,53 @@
+name: Report a problem
+description: A feed in feeds.xml is dead, misplaced, duplicated, or has wrong metadata.
+title: "[Bug] "
+labels:
+  - bug
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report. This repository doesn't accept code PRs — see
+        [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md). The maintainer will update Miniflux and
+        the next scheduled sync will carry the fix into `feeds.xml`.
+
+  - type: input
+    id: feed_url
+    attributes:
+      label: Feed URL (xmlUrl)
+      description: The `xmlUrl` attribute of the affected `<outline>` in `feeds.xml`.
+      placeholder: https://example.com/feed.xml
+    validations:
+      required: true
+
+  - type: input
+    id: folder
+    attributes:
+      label: Folder
+      description: The current folder the feed sits in (copy the `text=` attribute of the parent
+        `<outline>`, e.g. `07 🕵️ Threat Intel, Malware & Detection`).
+    validations:
+      required: false
+
+  - type: dropdown
+    id: nature
+    attributes:
+      label: Nature of the problem
+      options:
+        - Dead (404, DNS failure, SSL error, connection error)
+        - Misplaced (wrong folder)
+        - Duplicate (same feed listed twice)
+        - Wrong metadata (title, htmlUrl, etc.)
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What you observed, what you expected, and any supporting context (sample HTTP
+        response, screenshots, better feed URL to use instead, suggested target folder, …).
+    validations:
+      required: true

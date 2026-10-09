@@ -1,0 +1,79 @@
+name: Suggest a feed
+description: Propose a new RSS/Atom feed for this collection.
+title: "[Feed] "
+labels:
+  - feed-suggestion
+  - needs-triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the suggestion. The feed list is maintained in a private Miniflux instance; if
+        accepted, the next scheduled sync will carry it into `feeds.xml`. See
+        [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) for the full policy.
+
+  - type: input
+    id: title
+    attributes:
+      label: Feed title
+      description: The human-readable name of the feed.
+    validations:
+      required: true
+
+  - type: input
+    id: xml_url
+    attributes:
+      label: Feed URL (xmlUrl)
+      description: The RSS or Atom URL. Must be a valid feed, not an HTML page.
+      placeholder: https://example.com/feed.xml
+    validations:
+      required: true
+
+  - type: input
+    id: html_url
+    attributes:
+      label: Site URL (htmlUrl)
+      description: The human-facing homepage for the feed.
+      placeholder: https://example.com/
+    validations:
+      required: false
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Suggested category
+      description: Pick the folder that best fits. If none fits well, pick the closest and mention
+        it in Rationale.
+      options:
+        - "01 🚨 Alerts & Advisories"
+        - "02 📩 Curated Editions & Podcasts"
+        - "03 🔐 Platform, Firmware & RoT"
+        - "04 🏭 OT & ICS Security"
+        - "05 ⚔️ Vulnerability & Exploit Research"
+        - "06 🔗 Software Supply Chain & AppSec"
+        - "07 🕵️ Threat Intel, Malware & Detection"
+        - "08 ◀️ Reverse Engineering & DFIR"
+        - "09 🧠 AI & Agent Security"
+        - "10 🛡️ Standards & Governance"
+        - "11 🔏 Privacy, Crypto & Digital Rights"
+        - "12 📄 Security Papers & Preprints"
+        - "13 🔊 Conferences, CFPs & Talks"
+        - "14 🗞️ Security News & Commentary"
+        - "15 💼 Business & Markets"
+        - "16 📡 Security Linkstream"
+        - "17 🔩 Hardware, Maker & IoT"
+        - "18 ☁️ Hyperscalers"
+        - "19 🌩️ Neo-clouds"
+        - "20 💻 Tech, AI & Science"
+        - "21 📌 Personal & Misc"
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Why it belongs
+      description: One or two sentences on why this feed fits the collection — e.g. publication
+        cadence, author, topic focus, prior coverage you've valued.
+    validations:
+      required: true
