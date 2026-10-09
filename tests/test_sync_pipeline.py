@@ -64,7 +64,9 @@ def test_added_folder_adds_feed_and_patches_counts(
 ) -> None:
     incoming = (FIXTURES / "miniflux_added_folder.opml").read_text(encoding="utf-8")
 
-    result = sync_pipeline(incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE)
+    result = sync_pipeline(
+        incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE
+    )
 
     assert isinstance(result, SyncOutput)
     assert len(result.added) == 1
@@ -87,7 +89,9 @@ def test_removed_folder_drops_feed(
 ) -> None:
     incoming = (FIXTURES / "miniflux_removed_folder.opml").read_text(encoding="utf-8")
 
-    result = sync_pipeline(incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE)
+    result = sync_pipeline(
+        incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE
+    )
 
     assert isinstance(result, SyncOutput)
     assert result.added == ()
@@ -105,7 +109,9 @@ def test_url_change_is_removed_plus_added(
 ) -> None:
     incoming = (FIXTURES / "miniflux_url_change.opml").read_text(encoding="utf-8")
 
-    result = sync_pipeline(incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE)
+    result = sync_pipeline(
+        incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE
+    )
 
     assert isinstance(result, SyncOutput)
     assert len(result.added) == 1
@@ -119,7 +125,9 @@ def test_empty_category_is_omitted(
 ) -> None:
     incoming = (FIXTURES / "miniflux_empty_category.opml").read_text(encoding="utf-8")
 
-    result = sync_pipeline(incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE)
+    result = sync_pipeline(
+        incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE
+    )
 
     assert isinstance(result, NoChange)
 

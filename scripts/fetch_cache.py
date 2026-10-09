@@ -188,7 +188,10 @@ def main() -> None:
         errors = sum(1 for v in cache["feeds"].values() if v.get("error"))
         stale = sum(1 for v in cache["feeds"].values() if not is_fresh(v, 6))
         print(f"generated : {cache.get('generated_at', 'never')}")
-        print(f"feeds     : {total} total / {with_items} with articles / {errors} errors / {stale} stale")
+        print(
+            f"feeds     : {total} total / {with_items} with articles / "
+            f"{errors} errors / {stale} stale"
+        )
         return
 
     max_age = 0.0 if args.force else args.max_age
@@ -196,7 +199,10 @@ def main() -> None:
     cache = asyncio.run(refresh(feeds, cache, max_age, args.folders or [], args.urls or []))
     CACHE_FILE.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
     total_items = sum(len(v.get("items", [])) for v in cache["feeds"].values())
-    print(f"Cached {len(cache['feeds'])} feeds, {total_items} articles → {CACHE_FILE}", file=sys.stderr)
+    print(
+        f"Cached {len(cache['feeds'])} feeds, {total_items} articles → {CACHE_FILE}",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":
