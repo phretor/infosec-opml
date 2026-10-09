@@ -1,6 +1,6 @@
 # Information and Cyber Security RSS/Atom Feeds
 
-A curated collection of 366 information security, cybersecurity, technology, and research RSS/Atom
+A curated collection of 799 information security, cybersecurity, technology, and research RSS/Atom
 feeds organized in a single OPML file. The taxonomy is ordered by reading action and urgency and is
 designed for import into any RSS reader (tested with
 [Inoreader](https://www.inoreader.com)).
@@ -13,7 +13,7 @@ Import `feeds.xml` into your RSS reader. That's it.
 
 ## Folders
 
-Feeds are organized into 21 permanent, flat folders. Numeric prefixes make readers that sort folders
+Feeds are organized into 24 permanent, flat folders. Numeric prefixes make readers that sort folders
 alphabetically preserve the intended workflow. The flat structure is intentional because some readers
 do not support nested folders.
 
