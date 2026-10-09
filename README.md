@@ -55,49 +55,17 @@ status is read from Miniflux's own `/v1/feeds` API (not probed from the GitHub r
 reflects whether Miniflux can actually fetch each feed. Dead feeds (disabled, over the parsing-error
 threshold, or missing from Miniflux) block the PR as a red check; transient errors do not.
 
-## Maintenance
+## Suggesting feeds
 
-This repo includes Python scripts managed with [uv](https://docs.astral.sh/uv/):
+This repo does not accept code pull requests. The feed list is maintained inside a Miniflux
+instance, and `feeds.xml` is a generated export — any PR against it would be overwritten by the
+next sync. Open an issue instead:
 
-```bash
-# Show feed statistics
-uv run python -m scripts.stats
+- **Suggest a feed** — propose a new feed with its URL and category
+- **Report a problem** — a feed is dead, misplaced, duplicated, or has wrong metadata
 
-# Check feed health via Miniflux's API (requires MINIFLUX_URL + MINIFLUX_TOKEN env;
-# --fail-on-dead gates the CI health check)
-uv run python -m scripts.check_feeds --fail-on-dead
-
-# Reproduce a Miniflux sync locally against a saved OPML export
-uv run python -m scripts.miniflux_sync --input ./miniflux-export.opml --dry-run
-
-# Add a single feed
-uv run python -m scripts.add_feeds \
-  --name "Example Research Blog" \
-  --xml-url "https://example.com/feed" \
-  --html-url "https://example.com" \
-  --folder "04 ⚔️ Vulnerability & Exploit Research"
-
-# Bulk import from another OPML file
-uv run python -m scripts.add_feeds \
-  --from-opml other.opml \
-  --target-folder "03 🔐 Platform, Firmware & RoT"
-
-# List available folders
-uv run python -m scripts.add_feeds --list-folders
-```
-
-Validate structural changes before committing:
-
-```bash
-xmllint --noout feeds.xml
-uv run python -m scripts.stats
-```
-
-## Contributing
-
-Contributions are welcome—fork the repository and send a pull request. Place new feeds according to
-their dominant reading action and content. Preserve the numeric prefix, emoji, and flat folder
-structure.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full policy and [SECURITY.md](SECURITY.md) for
+reporting security concerns.
 
 ## Credits
 
