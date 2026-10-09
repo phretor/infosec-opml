@@ -1,0 +1,154 @@
+name: PR checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "feeds.xml"
+      - "scripts/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/**"
+
+concurrency:
+  group: pr-checks-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  xml:
+    name: OPML XML validity
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read   # checkout only
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install xmllint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libxml2-utils
+      - name: Validate feeds.xml is well-formed XML
+        run: xmllint --noout feeds.xml
+
+  structural-lint:
+    name: OPML structural lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read   # checkout only
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install project
+        run: uv sync --extra dev
+      - name: Run structural lint
+        run: uv run python -m scripts.lint_opml
+
+  pytest:
+    name: pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read   # checkout only
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install project
+        run: uv sync --extra dev
+      - name: Run tests
+        run: uv run pytest -q
+
+  workflows-lint:
+    name: actionlint + zizmor
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read   # checkout only
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install actionlint
+        run: |
+          set -euo pipefail
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          echo "$HOME/go/bin" >> "$GITHUB_PATH"
+      - name: Run actionlint
+        run: actionlint
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Run zizmor
+        run: uvx zizmor@1.30.1 --min-severity=medium .github/workflows/
+
+  readme-consistency:
+    name: README consistency (advisory)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read   # checkout only
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install project
+        run: uv sync --extra dev
+      - name: Check README vs feeds.xml
+        run: uv run python -m scripts.check_readme
+
+  health:
+    name: Feed health (advisory)
+    # Skip on fork PRs: Miniflux secrets are not exposed to forks.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read   # checkout only
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install project
+        run: uv sync --extra dev
+      - name: Check feed health
+        env:
+          # Same repo-level secret scope as miniflux-sync.yml.
+          MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}  # zizmor: ignore[secrets-outside-env]
+          MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}  # zizmor: ignore[secrets-outside-env]
+        run: uv run python -m scripts.check_feeds --fail-on-dead
