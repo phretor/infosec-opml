@@ -266,3 +266,40 @@ def test_miniflux_auth_failure_still_fails(
 ) -> None:
     with pytest.raises(httpx.HTTPStatusError):
         _main_with_fetch(monkeypatch, tmp_path, _raising_fetch(_status_error(401)))
+
+
+_BASE_URL = "https://old.example/feed"
+_NEW_URL = "https://new.example/feed"
+
+
+@pytest.mark.parametrize(
+    ("miniflux_payload", "expected_exit"),
+    [
+        pytest.param({_BASE_URL: _status()}, None, id="new-feed-missing-is-pending"),
+        pytest.param({_NEW_URL: _status()}, 1, id="base-feed-missing-stays-dead"),
+    ],
+)
+def test_base_opml_marks_new_feeds_missing_from_miniflux_pending(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    miniflux_payload: dict[str, MinifluxStatus],
+    expected_exit: int | None,
+) -> None:
+    base_xml = tmp_path / "base.xml"
+    _write_feeds_xml(base_xml, [("Old", _BASE_URL, "01 Test")])
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Old", _BASE_URL, "01 Test"), ("New", _NEW_URL, "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
+    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *a, **k: miniflux_payload)
+    monkeypatch.setattr(
+        "sys.argv", ["check_feeds", "--fail-on-dead", "--base-opml", str(base_xml)]
+    )
+
+    if expected_exit is None:
+        assert check_feeds.main() is None
+    else:
+        with pytest.raises(SystemExit) as exc:
+            check_feeds.main()
+        assert exc.value.code == expected_exit

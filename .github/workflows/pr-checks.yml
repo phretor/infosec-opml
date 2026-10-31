@@ -139,6 +139,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
+          # Depth 2: the PR merge commit plus its first parent (the base branch tip).
+          fetch-depth: 2
       - name: Set up uv
         uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
         with:
@@ -146,9 +148,15 @@ jobs:
           enable-cache: true
       - name: Install project
         run: uv sync --extra dev
+      - name: Extract base feeds.xml
+        # Feeds new relative to the base are not in Miniflux yet; check_feeds
+        # reports them as pending instead of dead.
+        run: git show HEAD^1:feeds.xml > "$RUNNER_TEMP/base-feeds.xml"
       - name: Check feed health
         env:
           # Same repo-level secret scope as miniflux-sync.yml.
           MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}  # zizmor: ignore[secrets-outside-env]
           MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}  # zizmor: ignore[secrets-outside-env]
-        run: uv run python -m scripts.check_feeds --fail-on-dead
+        run: >-
+          uv run python -m scripts.check_feeds --fail-on-dead
+          --base-opml "$RUNNER_TEMP/base-feeds.xml"

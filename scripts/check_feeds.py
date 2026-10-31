@@ -8,7 +8,9 @@ to generic cloud IPs for feeds that are perfectly healthy from Miniflux's end.
 A feed over the error threshold whose last error is a temporary reachability
 failure (network/DNS error, timeout, HTTP 429, HTTP 5xx) is `unreachable`, not
 `dead`: it is reported but never fails `--fail-on-dead`. The same applies when
-the Miniflux API itself is temporarily unreachable.
+the Miniflux API itself is temporarily unreachable. With `--base-opml`, a feed
+missing from Miniflux that is new relative to that base (a PR addition Miniflux
+has not subscribed to yet) is `pending`, also non-failing.
 """
 
 from __future__ import annotations
@@ -28,7 +30,7 @@ FEEDS_XML = Path(__file__).resolve().parent.parent / "feeds.xml"
 DEFAULT_MIN_ERROR_COUNT = 3
 HTTP_TIMEOUT = 30.0
 
-Verdict = Literal["ok", "transient", "unreachable", "dead"]
+Verdict = Literal["ok", "transient", "unreachable", "pending", "dead"]
 
 # Prefixes of Miniflux's (en_US) parsing_error_message strings that mean the
 # site was temporarily unreachable rather than gone or broken. Source:
@@ -158,18 +160,21 @@ def classify_feeds(
     feeds: list[FeedRow],
     miniflux_by_url: dict[str, MinifluxStatus],
     min_error_count: int,
+    new_urls: frozenset[str] = frozenset(),
 ) -> list[ClassifiedFeed]:
-    """Apply classify() to each feed in feeds.xml."""
+    """Apply classify() to each feed in feeds.xml.
+
+    A feed missing from Miniflux whose URL is in `new_urls` (added relative to
+    the PR base) is `pending` rather than `dead`.
+    """
     out: list[ClassifiedFeed] = []
     for f in feeds:
         status = miniflux_by_url.get(f.xml_url)
-        out.append(
-            ClassifiedFeed(
-                feed=f,
-                verdict=classify(status, min_error_count),
-                status=status,
-            )
-        )
+        if status is None and f.xml_url in new_urls:
+            verdict: Verdict = "pending"
+        else:
+            verdict = classify(status, min_error_count)
+        out.append(ClassifiedFeed(feed=f, verdict=verdict, status=status))
     return out
 
 
@@ -233,6 +238,14 @@ def main() -> None:
             f"(default: {DEFAULT_MIN_ERROR_COUNT})"
         ),
     )
+    parser.add_argument(
+        "--base-opml",
+        type=Path,
+        help=(
+            "feeds.xml from the PR base; feeds absent from it and from Miniflux "
+            "are pending (not yet pushed to Miniflux), not dead"
+        ),
+    )
     args = parser.parse_args()
 
     if not FEEDS_XML.exists():
@@ -259,12 +272,17 @@ def main() -> None:
             file=sys.stderr,
         )
         return
-    classified = classify_feeds(feeds, miniflux, args.min_error_count)
+    new_urls: frozenset[str] = frozenset()
+    if args.base_opml is not None:
+        base_urls = {f.xml_url for f in parse_feeds(args.base_opml)}
+        new_urls = frozenset(f.xml_url for f in feeds if f.xml_url not in base_urls)
+    classified = classify_feeds(feeds, miniflux, args.min_error_count, new_urls)
 
     buckets: dict[Verdict, list[ClassifiedFeed]] = {
         "ok": [],
         "transient": [],
         "unreachable": [],
+        "pending": [],
         "dead": [],
     }
     for c in classified:
@@ -275,6 +293,7 @@ def main() -> None:
         f"Results: {len(buckets['ok'])} OK, "
         f"{len(buckets['dead'])} dead, "
         f"{len(buckets['unreachable'])} temporarily unreachable, "
+        f"{len(buckets['pending'])} pending, "
         f"{len(buckets['transient'])} transient "
         f"(threshold: parsing_error_count >= {args.min_error_count})\n"
     )
@@ -287,6 +306,10 @@ def main() -> None:
         "TEMPORARILY UNREACHABLE (over error threshold on network error, timeout, "
         "429, or 5xx; not failing)",
         buckets["unreachable"],
+    )
+    print_section(
+        "PENDING (new in this PR, not yet in Miniflux; not failing)",
+        buckets["pending"],
     )
     if args.min_error_count <= 1:
         transient_title = "TRANSIENT ERRORS (none at this threshold)"

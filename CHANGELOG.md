@@ -10,6 +10,8 @@
   reachability failure (network/DNS error, timeout, HTTP 429, HTTP 5xx) are classified
   `unreachable` and no longer fail `--fail-on-dead`; a temporarily unreachable Miniflux API
   (network error, 429, 5xx) skips the check with a warning instead of failing
+- `scripts/check_feeds.py`: new `--base-opml`; feeds missing from Miniflux that are new relative
+  to that base are `pending`, not `dead`. The PR-checks health job passes the PR base `feeds.xml`
 
 ## 2026-10-09
 
