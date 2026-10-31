@@ -9,7 +9,8 @@ body:
     attributes:
       value: |
         Thanks for the suggestion. The feed list is maintained in a private Miniflux instance; if
-        accepted, the next scheduled sync will carry it into `feeds.xml`. See
+        accepted, the next scheduled sync will carry it into `feeds.xml`. You can also open a pull
+        request that adds the feed to `feeds.xml` directly. See
         [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md) for the full policy.
 
   - type: input

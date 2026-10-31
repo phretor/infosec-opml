@@ -23,6 +23,8 @@ feeds-cache = "scripts.fetch_cache:main"
 feeds-miniflux-sync = "scripts.miniflux_sync:main"
 feeds-lint-opml = "scripts.lint_opml:main"
 feeds-check-readme = "scripts.check_readme:main"
+feeds-miniflux-push = "scripts.miniflux_push:main"
+feeds-check-additions = "scripts.check_additions:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

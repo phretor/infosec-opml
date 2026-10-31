@@ -2,7 +2,23 @@
 
 ## 2026-10-31
 
+### Added
+- `scripts/miniflux_push.py` + `feeds-miniflux-push`: additive repo → Miniflux push. Subscribes
+  Miniflux to feeds a merge added to `feeds.xml` (pre- vs post-merge diff) using only
+  `GET /v1/categories`, `GET /v1/feeds`, and `POST /v1/feeds`; never removes, moves, renames, or
+  edits feeds, never creates categories, skips feeds Miniflux already has, and refuses
+  non-public URLs
+- `scripts/check_additions.py` + `feeds-check-additions`, and the "Contributor PR only adds feeds"
+  job in `pr-checks.yml`: rejects removed, moved, or edited feeds and feeds in new folders on
+  every PR except the bot sync PR
+
 ### Changed
+- `.github/workflows/miniflux-sync.yml`: also runs on pushes to `main` that change `feeds.xml`;
+  a new `push` job (skipped for merges of the bot sync PR) runs `scripts.miniflux_push` before
+  the sync, and the sync only runs after a successful push. Concurrency moved from the workflow
+  to the `sync` job so queued pushes are never cancelled
+- `CONTRIBUTING.md`, README, PR template, and issue templates: pull requests that add feeds to
+  existing folders are now accepted; removals, moves, and fixes stay issue-driven
 - `scripts/check_readme.py`: a `feeds.xml` folder missing from the README folder table is now a
   warning (GitHub annotation in CI) instead of an error; stale README rows and count mismatches
   still fail

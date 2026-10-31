@@ -4,16 +4,86 @@ on:
   schedule:
     - cron: "0 6 * * 1"  # Mondays, 06:00 UTC
   workflow_dispatch: {}
-
-concurrency:
-  group: miniflux-sync
-  cancel-in-progress: false
+  push:                  # merged feed additions flow repo -> Miniflux, then sync runs
+    branches: [main]
+    paths:
+      - "feeds.xml"
 
 permissions: {}
 
 jobs:
+  push:
+    name: Push merged feed additions into Miniflux
+    # Schedule and manual runs are pull-only.
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Deliberately no concurrency group: a newer queued run would cancel a pending one and
+    # drop its additions. Parallel runs are safe because their diffs are disjoint and
+    # Miniflux refuses duplicate feeds.
+    permissions:
+      contents: read         # checkout, plus feeds.xml at the pre-push commit
+      pull-requests: read    # recognize merges of the bot sync PR
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect merge of the bot sync PR
+        id: origin
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Its feed list came from Miniflux; pushing it back could re-add a feed the
+          # maintainer deleted between the sync run and the merge.
+          count=$(gh api "repos/$REPO/commits/$SHA/pulls" --jq '[.[]
+            | select(.head.ref == "bot/miniflux-sync"
+              and .head.repo.full_name == env.REPO
+              and .merge_commit_sha == env.SHA)] | length')
+          if [ "$count" -gt 0 ]; then
+            echo "Bot sync PR merge: nothing to push."
+            echo "sync_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "sync_pr=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up uv
+        if: steps.origin.outputs.sync_pr == 'false'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install project
+        if: steps.origin.outputs.sync_pr == 'false'
+        run: uv sync --extra dev
+
+      - name: Subscribe Miniflux to added feeds (additive only)
+        if: steps.origin.outputs.sync_pr == 'false'
+        env:
+          BEFORE: ${{ github.event.before }}
+          # Same repo-level secret policy as the sync job below.
+          MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}  # zizmor: ignore[secrets-outside-env]
+          MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}  # zizmor: ignore[secrets-outside-env]
+        run: |
+          set -euo pipefail
+          git show "$BEFORE:feeds.xml" > "$RUNNER_TEMP/feeds.before.xml"
+          uv run python -m scripts.miniflux_push --before "$RUNNER_TEMP/feeds.before.xml"
+
   sync:
     name: Sync Miniflux into feeds.xml
+    needs: push
+    # Runs when push was skipped (schedule/dispatch) or succeeded. After a failed push it
+    # would propose removing the feeds that did not reach Miniflux, so it does not run.
+    if: ${{ !cancelled() && (needs.push.result == 'success' || needs.push.result == 'skipped') }}
+    concurrency:
+      group: miniflux-sync
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     permissions:
       contents: write        # commit the regenerated feeds.xml/README/CHANGELOG
@@ -72,6 +142,8 @@ jobs:
   health:
     name: Feed health check
     needs: sync
+    # Explicit: the implicit success() would also see the skipped push job on schedule runs.
+    if: ${{ !cancelled() && needs.sync.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read   # checkout only
