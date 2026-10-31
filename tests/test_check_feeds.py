@@ -108,6 +108,17 @@ _TEST_URL = "https://x.example/feed"
         pytest.param(
             {_TEST_URL: _status(count=1, msg="single blip")}, None, id="transient"
         ),
+        pytest.param(
+            {
+                _TEST_URL: _status(
+                    count=5,
+                    msg="Miniflux is not able to reach this website due to a network "
+                    "error: dial tcp: i/o timeout.",
+                )
+            },
+            None,
+            id="over-threshold-unreachable",
+        ),
     ],
 )
 def test_fail_on_dead_exit_matrix(
@@ -147,3 +158,111 @@ def test_main_errors_without_credentials(
     with pytest.raises(SystemExit) as exc:
         check_feeds.main()
     assert exc.value.code == 2
+
+
+# Real Miniflux en_US parsing_error_message strings (see is_transient_unreachable).
+_NETWORK_ERR = (
+    "Miniflux is not able to reach this website due to a network error: "
+    'Get "https://x.example/feed": dial tcp: lookup x.example: no such host.'
+)
+_TIMEOUT_ERR = "This website is too slow and the request timed out: context deadline exceeded"
+_TOO_MANY = (
+    "Miniflux generated too many requests to this website. Please, try again later "
+    "or change the application configuration."
+)
+_BAD_GATEWAY = (
+    "The website is not available at the moment due to a bad gateway error. "
+    "The problem is not on Miniflux side. Please, try again later."
+)
+_SERVER_ERR = (
+    "The website is not available at the moment due to a server error. "
+    "The problem is not on Miniflux side. Please, try again later."
+)
+
+
+def _unexpected_status(code: int) -> str:
+    return (
+        "The website is not available at the moment due to an unexpected HTTP status "
+        f"code: {code}. The problem is not on Miniflux side. Please, try again later."
+    )
+
+
+@pytest.mark.parametrize(
+    ("message", "expected"),
+    [
+        pytest.param(_NETWORK_ERR, "unreachable", id="network-dns"),
+        pytest.param(_TIMEOUT_ERR, "unreachable", id="timeout"),
+        pytest.param(_TOO_MANY, "unreachable", id="429"),
+        pytest.param(_BAD_GATEWAY, "unreachable", id="502"),
+        pytest.param(_SERVER_ERR, "unreachable", id="500"),
+        pytest.param(_unexpected_status(522), "unreachable", id="522"),
+        pytest.param(_unexpected_status(410), "dead", id="410-unexpected-status"),
+        pytest.param(
+            "The requested resource is not found. Please, verify the URL.",
+            "dead",
+            id="404",
+        ),
+        pytest.param(
+            "Access to this website is forbidden. Perhaps, this website has a bot "
+            "protection mechanism?",
+            "dead",
+            id="403",
+        ),
+        pytest.param("This feed already exists.", "dead", id="already-exists"),
+        pytest.param("Unable to detect feed format: EOF.", "dead", id="parse-error"),
+    ],
+)
+def test_classify_over_threshold_by_message(message: str, expected: str) -> None:
+    assert check_feeds.classify(_status(count=3, msg=message), min_error_count=3) == expected
+
+
+def test_classify_disabled_stays_dead_even_when_unreachable() -> None:
+    status = _status(disabled=True, count=5, msg=_NETWORK_ERR)
+    assert check_feeds.classify(status, min_error_count=3) == "dead"
+
+
+def _main_with_fetch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fetch) -> None:
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Feed", _TEST_URL, "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
+    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", fetch)
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+    return check_feeds.main()
+
+
+def _raising_fetch(exc: Exception):
+    def fetch(*_a, **_k):
+        raise exc
+
+    return fetch
+
+
+def _status_error(code: int) -> httpx.HTTPStatusError:
+    request = httpx.Request("GET", "https://mf.example/v1/feeds")
+    return httpx.HTTPStatusError(
+        "boom", request=request, response=httpx.Response(code, request=request)
+    )
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        pytest.param(httpx.ConnectError("refused"), id="connect-error"),
+        pytest.param(httpx.ReadTimeout("slow"), id="timeout"),
+        pytest.param(_status_error(503), id="503"),
+        pytest.param(_status_error(429), id="429"),
+    ],
+)
+def test_transient_miniflux_api_failure_does_not_fail(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, exc: Exception
+) -> None:
+    assert _main_with_fetch(monkeypatch, tmp_path, _raising_fetch(exc)) is None
+
+
+def test_miniflux_auth_failure_still_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    with pytest.raises(httpx.HTTPStatusError):
+        _main_with_fetch(monkeypatch, tmp_path, _raising_fetch(_status_error(401)))
