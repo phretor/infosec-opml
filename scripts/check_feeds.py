@@ -4,12 +4,20 @@ Miniflux already polls every feed on its own schedule and tracks parsing errors
 with a stable `parsing_error_count` field. We read that view instead of probing
 URLs from the CI runner, which was unreliable because many hosts return 4xx/429
 to generic cloud IPs for feeds that are perfectly healthy from Miniflux's end.
+
+A feed over the error threshold whose last error is a temporary reachability
+failure (network/DNS error, timeout, HTTP 429, HTTP 5xx) is `unreachable`, not
+`dead`: it is reported but never fails `--fail-on-dead`. The same applies when
+the Miniflux API itself is temporarily unreachable. With `--base-opml`, a feed
+missing from Miniflux that is new relative to that base (a PR addition Miniflux
+has not subscribed to yet) is `pending`, also non-failing.
 """
 
 from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
@@ -22,7 +30,20 @@ FEEDS_XML = Path(__file__).resolve().parent.parent / "feeds.xml"
 DEFAULT_MIN_ERROR_COUNT = 3
 HTTP_TIMEOUT = 30.0
 
-Verdict = Literal["ok", "transient", "dead"]
+Verdict = Literal["ok", "transient", "unreachable", "pending", "dead"]
+
+# Prefixes of Miniflux's (en_US) parsing_error_message strings that mean the
+# site was temporarily unreachable rather than gone or broken. Source:
+# miniflux/v2 internal/locale/translations/en_US.json, error.network_operation,
+# error.network_timeout, error.http_too_many_requests, and the error.http_*
+# "not available at the moment" family (500/502/503/504/other status codes).
+_TRANSIENT_MESSAGE_PREFIXES = (
+    "Miniflux is not able to reach this website due to a network error",
+    "This website is too slow and the request timed out",
+    "Miniflux generated too many requests to this website",
+    "The website is not available at the moment due to",
+)
+_UNEXPECTED_STATUS_RE = re.compile(r"unexpected HTTP status code: (\d+)")
 
 
 @dataclass(frozen=True)
@@ -107,6 +128,19 @@ def fetch_miniflux_feeds(
         return _fetch_feeds_via(owned, base_url, api_token)
 
 
+def is_transient_unreachable(message: str) -> bool:
+    """True if a Miniflux error message is a temporary reachability failure.
+
+    The "not available at the moment" family also covers Miniflux's
+    unexpected-status-code message, which can carry a 4xx; only 5xx counts.
+    """
+    message = message.strip()
+    if not message.startswith(_TRANSIENT_MESSAGE_PREFIXES):
+        return False
+    status = _UNEXPECTED_STATUS_RE.search(message)
+    return status is None or int(status.group(1)) >= 500
+
+
 def classify(status: MinifluxStatus | None, min_error_count: int) -> Verdict:
     """Classify one feed given its Miniflux status (or None if missing)."""
     if status is None:
@@ -114,6 +148,8 @@ def classify(status: MinifluxStatus | None, min_error_count: int) -> Verdict:
     if status.disabled:
         return "dead"
     if status.parsing_error_count >= min_error_count:
+        if is_transient_unreachable(status.parsing_error_message):
+            return "unreachable"
         return "dead"
     if status.parsing_error_count > 0:
         return "transient"
@@ -124,18 +160,21 @@ def classify_feeds(
     feeds: list[FeedRow],
     miniflux_by_url: dict[str, MinifluxStatus],
     min_error_count: int,
+    new_urls: frozenset[str] = frozenset(),
 ) -> list[ClassifiedFeed]:
-    """Apply classify() to each feed in feeds.xml."""
+    """Apply classify() to each feed in feeds.xml.
+
+    A feed missing from Miniflux whose URL is in `new_urls` (added relative to
+    the PR base) is `pending` rather than `dead`.
+    """
     out: list[ClassifiedFeed] = []
     for f in feeds:
         status = miniflux_by_url.get(f.xml_url)
-        out.append(
-            ClassifiedFeed(
-                feed=f,
-                verdict=classify(status, min_error_count),
-                status=status,
-            )
-        )
+        if status is None and f.xml_url in new_urls:
+            verdict: Verdict = "pending"
+        else:
+            verdict = classify(status, min_error_count)
+        out.append(ClassifiedFeed(feed=f, verdict=verdict, status=status))
     return out
 
 
@@ -171,6 +210,16 @@ def print_section(title: str, entries: list[ClassifiedFeed]) -> None:
         print()
 
 
+def _is_transient_api_error(exc: httpx.HTTPError) -> bool:
+    """True if a Miniflux API failure is temporary (network, 429, or 5xx)."""
+    if isinstance(exc, httpx.TransportError):
+        return True
+    if isinstance(exc, httpx.HTTPStatusError):
+        code = exc.response.status_code
+        return code == 429 or code >= 500
+    return False
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="Classify RSS/Atom feed health using Miniflux's API"
@@ -185,8 +234,16 @@ def main() -> None:
         type=int,
         default=DEFAULT_MIN_ERROR_COUNT,
         help=(
-            "Parsing-error threshold at which a feed is dead "
+            "Parsing-error threshold at which a feed is dead or unreachable "
             f"(default: {DEFAULT_MIN_ERROR_COUNT})"
+        ),
+    )
+    parser.add_argument(
+        "--base-opml",
+        type=Path,
+        help=(
+            "feeds.xml from the PR base; feeds absent from it and from Miniflux "
+            "are pending (not yet pushed to Miniflux), not dead"
         ),
     )
     args = parser.parse_args()
@@ -205,10 +262,29 @@ def main() -> None:
         sys.exit(2)
 
     feeds = parse_feeds(FEEDS_XML)
-    miniflux = fetch_miniflux_feeds(base, token)
-    classified = classify_feeds(feeds, miniflux, args.min_error_count)
+    try:
+        miniflux = fetch_miniflux_feeds(base, token)
+    except httpx.HTTPError as exc:
+        if not _is_transient_api_error(exc):
+            raise
+        print(
+            f"warning: Miniflux API temporarily unreachable, skipping health check: {exc}",
+            file=sys.stderr,
+        )
+        return
+    new_urls: frozenset[str] = frozenset()
+    if args.base_opml is not None:
+        base_urls = {f.xml_url for f in parse_feeds(args.base_opml)}
+        new_urls = frozenset(f.xml_url for f in feeds if f.xml_url not in base_urls)
+    classified = classify_feeds(feeds, miniflux, args.min_error_count, new_urls)
 
-    buckets: dict[Verdict, list[ClassifiedFeed]] = {"ok": [], "transient": [], "dead": []}
+    buckets: dict[Verdict, list[ClassifiedFeed]] = {
+        "ok": [],
+        "transient": [],
+        "unreachable": [],
+        "pending": [],
+        "dead": [],
+    }
     for c in classified:
         buckets[c.verdict].append(c)
 
@@ -216,6 +292,8 @@ def main() -> None:
     print(
         f"Results: {len(buckets['ok'])} OK, "
         f"{len(buckets['dead'])} dead, "
+        f"{len(buckets['unreachable'])} temporarily unreachable, "
+        f"{len(buckets['pending'])} pending, "
         f"{len(buckets['transient'])} transient "
         f"(threshold: parsing_error_count >= {args.min_error_count})\n"
     )
@@ -223,6 +301,15 @@ def main() -> None:
     print_section(
         "DEAD FEEDS (disabled, over error threshold, or missing from Miniflux)",
         buckets["dead"],
+    )
+    print_section(
+        "TEMPORARILY UNREACHABLE (over error threshold on network error, timeout, "
+        "429, or 5xx; not failing)",
+        buckets["unreachable"],
+    )
+    print_section(
+        "PENDING (new in this PR, not yet in Miniflux; not failing)",
+        buckets["pending"],
     )
     if args.min_error_count <= 1:
         transient_title = "TRANSIENT ERRORS (none at this threshold)"

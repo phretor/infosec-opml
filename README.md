@@ -53,7 +53,10 @@ PR on `bot/miniflux-sync` with the patched `feeds.xml`, README counts, and a mec
 entry. A second job runs `scripts.check_feeds --fail-on-dead` against the resulting file. Health
 status is read from Miniflux's own `/v1/feeds` API (not probed from the GitHub runner), so the gate
 reflects whether Miniflux can actually fetch each feed. Dead feeds (disabled, over the parsing-error
-threshold, or missing from Miniflux) block the PR as a red check; transient errors do not.
+threshold, or missing from Miniflux) block the PR as a red check. Transient errors, feeds over
+the threshold whose last error is a temporary reachability failure (network/DNS error, timeout, HTTP
+429 or 5xx), and, in PR checks, feeds added by the PR that Miniflux has not subscribed to yet are
+reported but do not.
 
 ## Suggesting feeds
 

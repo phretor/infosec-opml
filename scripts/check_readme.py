@@ -1,17 +1,21 @@
 """Verify README.md stays in sync with feeds.xml.
 
 Checks the two sync-anchor sentences (feed count, folder count) and
-the folder table against the current OPML. Fails when they drift.
+the folder table against the current OPML. Fails when they drift, except
+that a feeds.xml folder not yet listed in the README table is only a
+warning: Miniflux syncs add or rename categories before the README catches up.
 """
 
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import sys
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 _FEED_COUNT_RE = re.compile(r"collection of (\d+) information security")
 _FOLDER_COUNT_RE = re.compile(r"organized into (\d+) permanent, flat folders")
@@ -20,25 +24,26 @@ _TABLE_ROW_RE = re.compile(r"^\|\s*(\d{2} [^|]+?)\s*\|.*\|$", re.MULTILINE)
 
 @dataclass(frozen=True)
 class LintError:
-    """A single README-consistency failure."""
+    """A single README-consistency finding; only ``error`` severity fails."""
 
     rule: str
     message: str
+    severity: Literal["error", "warning"] = "error"
 
 
 def check_readme(readme_path: Path, opml_path: Path) -> list[LintError]:
-    """Return consistency errors between README.md and feeds.xml.
+    """Return consistency findings between README.md and feeds.xml.
 
     An empty list means the two files agree on feed count, folder count,
     and the set of folder names.
     """
     readme = readme_path.read_text(encoding="utf-8")
     opml_folders, opml_feed_count = _parse_opml(opml_path)
-    errors: list[LintError] = []
-    errors += _check_count(readme, _FEED_COUNT_RE, opml_feed_count, "feed")
-    errors += _check_count(readme, _FOLDER_COUNT_RE, len(opml_folders), "folder")
-    errors += _check_folder_set(readme, opml_folders)
-    return errors
+    findings: list[LintError] = []
+    findings += _check_count(readme, _FEED_COUNT_RE, opml_feed_count, "feed")
+    findings += _check_count(readme, _FOLDER_COUNT_RE, len(opml_folders), "folder")
+    findings += _check_folder_set(readme, opml_folders)
+    return findings
 
 
 def _parse_opml(opml_path: Path) -> tuple[set[str], int]:
@@ -85,24 +90,29 @@ def _check_count(
 
 
 def _check_folder_set(readme: str, opml_folders: set[str]) -> list[LintError]:
-    """Return errors for folders in only README or only feeds.xml."""
+    """Return findings for folders in only README or only feeds.xml.
+
+    A feeds.xml folder missing from the README is a warning; a README row
+    naming a folder that feeds.xml lacks is an error.
+    """
     readme_folders = {m.group(1).strip() for m in _TABLE_ROW_RE.finditer(readme)}
-    errors: list[LintError] = []
+    findings: list[LintError] = []
     for name in sorted(opml_folders - readme_folders):
-        errors.append(
+        findings.append(
             LintError(
                 "readme-folder-missing",
                 f"folder in feeds.xml is not listed in README table: {name!r}",
+                "warning",
             )
         )
     for name in sorted(readme_folders - opml_folders):
-        errors.append(
+        findings.append(
             LintError(
                 "readme-folder-extra",
                 f"folder in README table is not in feeds.xml: {name!r}",
             )
         )
-    return errors
+    return findings
 
 
 def main() -> int:
@@ -111,13 +121,19 @@ def main() -> int:
     parser.add_argument("--readme", default=Path("README.md"), type=Path)
     parser.add_argument("--opml", default=Path("feeds.xml"), type=Path)
     args = parser.parse_args()
-    errors = check_readme(args.readme, args.opml)
+    findings = check_readme(args.readme, args.opml)
+    errors = [f for f in findings if f.severity == "error"]
+    warnings = [f for f in findings if f.severity == "warning"]
+    for warn in warnings:
+        print(f"warning: {warn.rule}: {warn.message}", file=sys.stderr)
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            print(f"::warning title={warn.rule}::{warn.message}")
     for err in errors:
         print(f"{err.rule}: {err.message}", file=sys.stderr)
     if errors:
-        print(f"{len(errors)} error(s)", file=sys.stderr)
+        print(f"{len(errors)} error(s), {len(warnings)} warning(s)", file=sys.stderr)
         return 1
-    print("OK")
+    print(f"OK ({len(warnings)} warning(s))" if warnings else "OK")
     return 0
 
 

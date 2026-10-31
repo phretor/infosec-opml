@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-31
+
+### Changed
+- `scripts/check_readme.py`: a `feeds.xml` folder missing from the README folder table is now a
+  warning (GitHub annotation in CI) instead of an error; stale README rows and count mismatches
+  still fail
+- `scripts/check_feeds.py`: feeds over the error threshold whose Miniflux error is a temporary
+  reachability failure (network/DNS error, timeout, HTTP 429, HTTP 5xx) are classified
+  `unreachable` and no longer fail `--fail-on-dead`; a temporarily unreachable Miniflux API
+  (network error, 429, 5xx) skips the check with a warning instead of failing
+- `scripts/check_feeds.py`: new `--base-opml`; feeds missing from Miniflux that are new relative
+  to that base are `pending`, not `dead`. The PR-checks health job passes the PR base `feeds.xml`
+
 ## 2026-10-09
 
 ### Added

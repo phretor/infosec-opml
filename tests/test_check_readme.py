@@ -2,7 +2,9 @@
 
 from pathlib import Path
 
-from scripts.check_readme import check_readme
+import pytest
+
+from scripts.check_readme import check_readme, main
 
 OPML_HEADER = (
     '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -75,22 +77,37 @@ def test_folder_count_mismatch_is_reported(tmp_path: Path) -> None:
     assert any(e.rule == "readme-folder-count-mismatch" for e in errs)
 
 
-def test_folder_in_opml_missing_from_readme(tmp_path: Path) -> None:
+def _run_main(monkeypatch: pytest.MonkeyPatch, readme: Path, opml: Path) -> int:
+    monkeypatch.setattr(
+        "sys.argv", ["check_readme", "--readme", str(readme), "--opml", str(opml)]
+    )
+    return main()
+
+
+def test_folder_in_opml_missing_from_readme_is_only_a_warning(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     opml = _write_opml(tmp_path, {FOLDER_A: 1, FOLDER_B: 1})
     readme = _write_readme(tmp_path, 2, 2, [FOLDER_A])
-    errs = check_readme(readme, opml)
-    assert any(
-        e.rule == "readme-folder-missing" and FOLDER_B in e.message for e in errs
-    )
+    findings = check_readme(readme, opml)
+    assert [(f.rule, f.severity) for f in findings] == [
+        ("readme-folder-missing", "warning")
+    ]
+    assert FOLDER_B in findings[0].message
+    assert _run_main(monkeypatch, readme, opml) == 0
 
 
-def test_folder_in_readme_missing_from_opml(tmp_path: Path) -> None:
+def test_folder_in_readme_missing_from_opml_is_an_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     opml = _write_opml(tmp_path, {FOLDER_A: 1})
     readme = _write_readme(tmp_path, 1, 1, [FOLDER_A, FOLDER_B])
     errs = check_readme(readme, opml)
     assert any(
-        e.rule == "readme-folder-extra" and FOLDER_B in e.message for e in errs
+        e.rule == "readme-folder-extra" and e.severity == "error" and FOLDER_B in e.message
+        for e in errs
     )
+    assert _run_main(monkeypatch, readme, opml) == 1
 
 
 def test_real_readme_parses_real_feeds_xml() -> None:
