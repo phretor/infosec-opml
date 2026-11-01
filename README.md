@@ -67,6 +67,18 @@ moves, renames, or edits existing feeds, never creates categories, skips feeds M
 has, and ignores merges of the sync PR itself), then runs the sync above so the sync PR reflects
 the result.
 
+For a one-time repair of the verified 2026-11-01 feed failures, dispatch
+`.github/workflows/miniflux-maintenance.yml`. It defaults to a read-only dry run and
+prints every proposed URL repoint/deletion; apply requires both `dry_run=false` and
+`confirm=apply`. Review the dry-run log and obtain approval before applying: the
+script changes Miniflux directly (nine URL repoints, including the Project Zero
+survivor, and twelve deletions); it does not edit `feeds.xml`. Missing URLs or
+replacement collisions stop mutation rather than selecting a different feed.
+Five independently verified valid feeds that Miniflux cannot fetch due to bot
+protection remain subscribed and appear separately as non-failing
+`bot-blocked` health exceptions, only for exact URLs and matching challenge/403
+errors. A subsequent sync proposes the updated OPML.
+
 ## Suggesting feeds
 
 Pull requests that add feeds to existing folders are welcome: a merged addition is pushed into
