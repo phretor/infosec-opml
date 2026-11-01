@@ -12,18 +12,25 @@ TIMEOUT = 10
 USER_AGENT = "Mozilla/5.0 RSS Feed Checker"
 
 
-def get_existing_urls(tree: ET.ElementTree) -> set[str]:
+def get_existing_urls(tree: ET.ElementTree[ET.Element[str]]) -> set[str]:
     urls = set()
-    for outline in tree.getroot().iter("outline"):
+    root = tree.getroot()
+    assert root is not None
+    for outline in root.iter("outline"):
         url = outline.get("xmlUrl", "")
         if url:
             urls.add(url.lower().rstrip("/"))
     return urls
 
 
-def get_folder_names(tree: ET.ElementTree) -> list[str]:
+def get_folder_names(tree: ET.ElementTree[ET.Element[str]]) -> list[str]:
     names = []
-    for folder in tree.getroot().find("body"):
+    root = tree.getroot()
+    assert root is not None
+    body = root.find("body")
+    if body is None:
+        raise ValueError("OPML document has no body")
+    for folder in body:
         if folder.get("type") != "rss":
             names.append(folder.get("text", ""))
     return names
@@ -45,12 +52,12 @@ def check_url(url: str) -> int | str:
             allow_redirects=True,
         )
         return r.status_code
-    except Exception as e:
+    except requests.RequestException as e:
         return str(e)[:60]
 
 
 def add_feed(
-    tree: ET.ElementTree,
+    tree: ET.ElementTree[ET.Element[str]],
     name: str,
     xml_url: str,
     html_url: str,
@@ -72,7 +79,11 @@ def add_feed(
             print(f"  SKIP ({status}): {name} -- {xml_url}")
             return False
 
-    body = tree.getroot().find("body")
+    root = tree.getroot()
+    assert root is not None
+    body = root.find("body")
+    if body is None:
+        raise ValueError("OPML document has no body")
     folder = find_folder(body, folder_name)
     if folder is None:
         folder = ET.SubElement(body, "outline")
@@ -92,21 +103,11 @@ def add_feed(
 
 def main():
     parser = argparse.ArgumentParser(description="Add feeds to feeds.xml")
-    parser.add_argument(
-        "--name", help="Feed name (for single feed mode)"
-    )
-    parser.add_argument(
-        "--xml-url", help="Feed RSS/Atom URL (for single feed mode)"
-    )
-    parser.add_argument(
-        "--html-url", help="Site URL (for single feed mode)", default=""
-    )
-    parser.add_argument(
-        "--folder", help="Target folder name (for single feed mode)"
-    )
-    parser.add_argument(
-        "--from-opml", help="Import from OPML file", type=Path
-    )
+    parser.add_argument("--name", help="Feed name (for single feed mode)")
+    parser.add_argument("--xml-url", help="Feed RSS/Atom URL (for single feed mode)")
+    parser.add_argument("--html-url", help="Site URL (for single feed mode)", default="")
+    parser.add_argument("--folder", help="Target folder name (for single feed mode)")
+    parser.add_argument("--from-opml", help="Import from OPML file", type=Path)
     parser.add_argument(
         "--target-folder",
         help="Target folder for all OPML imports",
@@ -147,17 +148,18 @@ def main():
             print(f"Error: {args.from_opml} not found", file=sys.stderr)
             sys.exit(1)
         src = ET.parse(args.from_opml)
-        for outline in src.getroot().iter("outline"):
-            if outline.get("type") == "rss":
-                if add_feed(
-                    tree,
-                    outline.get("text", ""),
-                    outline.get("xmlUrl", ""),
-                    outline.get("htmlUrl", ""),
-                    args.target_folder,
-                    verify=not args.no_verify,
-                ):
-                    added += 1
+        root = src.getroot()
+        assert root is not None
+        for outline in root.iter("outline"):
+            if outline.get("type") == "rss" and add_feed(
+                tree,
+                outline.get("text", ""),
+                outline.get("xmlUrl", ""),
+                outline.get("htmlUrl", ""),
+                args.target_folder,
+                verify=not args.no_verify,
+            ):
+                added += 1
     else:
         parser.print_help()
         sys.exit(1)

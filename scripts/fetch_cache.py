@@ -11,7 +11,7 @@ import json
 import re
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -27,7 +27,10 @@ USER_AGENT = "Mozilla/5.0 Security News Aggregator"
 def load_feeds(path: Path) -> list[dict]:
     tree = ET.parse(path)
     feeds = []
-    for folder in tree.getroot().find("body"):
+    body = tree.getroot().find("body")
+    if body is None:
+        raise ValueError("OPML document has no body")
+    for folder in body:
         folder_name = folder.get("text", "")
         for feed in folder:
             url = feed.get("xmlUrl", "")
@@ -40,8 +43,9 @@ def load_cache(path: Path) -> dict:
     if path.exists():
         try:
             return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            # A missing or unreadable cache is equivalent to a cold cache.
+            return {"generated_at": None, "feeds": {}}
     return {"generated_at": None, "feeds": {}}
 
 
@@ -52,10 +56,10 @@ def is_fresh(entry: dict, max_age_hours: float) -> bool:
     try:
         fetched = datetime.fromisoformat(ts)
         if fetched.tzinfo is None:
-            fetched = fetched.replace(tzinfo=timezone.utc)
-        age_h = (datetime.now(timezone.utc) - fetched).total_seconds() / 3600
+            fetched = fetched.replace(tzinfo=UTC)
+        age_h = (datetime.now(UTC) - fetched).total_seconds() / 3600
         return age_h < max_age_hours
-    except Exception:
+    except (TypeError, ValueError, OverflowError):
         return False
 
 
@@ -104,7 +108,7 @@ async def fetch_one(
     client: httpx.AsyncClient, feed: dict, sem: asyncio.Semaphore
 ) -> tuple[str, dict]:
     url = feed["url"]
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     async with sem:
         try:
             r = await client.get(url, timeout=TIMEOUT, follow_redirects=True)
@@ -117,7 +121,8 @@ async def fetch_one(
                 "items": items,
                 "error": None,
             }
-        except Exception as e:
+        # Isolate any failure in this feed from the other concurrent fetches.
+        except Exception as e:  # noqa: BLE001
             return url, {
                 "name": feed["name"],
                 "folder": feed["folder"],
@@ -159,7 +164,7 @@ async def refresh(
         if data["error"]:
             errors += 1
 
-    cache["generated_at"] = datetime.now(timezone.utc).isoformat()
+    cache["generated_at"] = datetime.now(UTC).isoformat()
     if errors:
         print(f"  {errors} fetch errors (see cache for details)", file=sys.stderr)
     return cache
@@ -167,16 +172,17 @@ async def refresh(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build/update article cache from feeds.xml")
-    parser.add_argument("--max-age", type=float, default=6.0,
-                        help="Re-fetch feeds older than N hours (default 6)")
-    parser.add_argument("--folders", nargs="*", metavar="FOLDER",
-                        help="Limit to these folder names")
-    parser.add_argument("--urls", nargs="*", metavar="URL",
-                        help="Limit to these feed URLs")
-    parser.add_argument("--force", action="store_true",
-                        help="Re-fetch everything regardless of age")
-    parser.add_argument("--stats", action="store_true",
-                        help="Print cache stats and exit")
+    parser.add_argument(
+        "--max-age", type=float, default=6.0, help="Re-fetch feeds older than N hours (default 6)"
+    )
+    parser.add_argument(
+        "--folders", nargs="*", metavar="FOLDER", help="Limit to these folder names"
+    )
+    parser.add_argument("--urls", nargs="*", metavar="URL", help="Limit to these feed URLs")
+    parser.add_argument(
+        "--force", action="store_true", help="Re-fetch everything regardless of age"
+    )
+    parser.add_argument("--stats", action="store_true", help="Print cache stats and exit")
     args = parser.parse_args()
 
     CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)

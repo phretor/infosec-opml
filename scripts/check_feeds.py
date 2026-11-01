@@ -314,9 +314,7 @@ def main() -> None:
     if args.min_error_count <= 1:
         transient_title = "TRANSIENT ERRORS (none at this threshold)"
     else:
-        transient_title = (
-            f"TRANSIENT ERRORS (parsing_error_count 1-{args.min_error_count - 1})"
-        )
+        transient_title = f"TRANSIENT ERRORS (parsing_error_count 1-{args.min_error_count - 1})"
     print_section(transient_title, buckets["transient"])
 
     if args.fail_on_dead and buckets["dead"]:

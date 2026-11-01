@@ -55,9 +55,7 @@ def lint_opml(path: Path) -> list[LintError]:
                 xml_urls[url] += 1
     for url, count in xml_urls.items():
         if count > 1:
-            errors.append(
-                LintError("duplicate-xmlurl", f"{url} appears {count} times", url)
-            )
+            errors.append(LintError("duplicate-xmlurl", f"{url} appears {count} times", url))
     return errors
 
 
@@ -101,9 +99,7 @@ def _check_leaf(leaf: ET.Element, folder_name: str) -> list[LintError]:
     for attr in _REQUIRED_LEAF_ATTRS:
         value = (leaf.get(attr) or "").strip()
         if not value:
-            errs.append(
-                LintError("missing-attribute", f"{attr} is missing or empty", loc)
-            )
+            errs.append(LintError("missing-attribute", f"{attr} is missing or empty", loc))
     if leaf.get("type") != "rss":
         errs.append(
             LintError(

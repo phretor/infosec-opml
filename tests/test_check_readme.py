@@ -78,9 +78,7 @@ def test_folder_count_mismatch_is_reported(tmp_path: Path) -> None:
 
 
 def _run_main(monkeypatch: pytest.MonkeyPatch, readme: Path, opml: Path) -> int:
-    monkeypatch.setattr(
-        "sys.argv", ["check_readme", "--readme", str(readme), "--opml", str(opml)]
-    )
+    monkeypatch.setattr("sys.argv", ["check_readme", "--readme", str(readme), "--opml", str(opml)])
     return main()
 
 
@@ -90,9 +88,7 @@ def test_folder_in_opml_missing_from_readme_is_only_a_warning(
     opml = _write_opml(tmp_path, {FOLDER_A: 1, FOLDER_B: 1})
     readme = _write_readme(tmp_path, 2, 2, [FOLDER_A])
     findings = check_readme(readme, opml)
-    assert [(f.rule, f.severity) for f in findings] == [
-        ("readme-folder-missing", "warning")
-    ]
+    assert [(f.rule, f.severity) for f in findings] == [("readme-folder-missing", "warning")]
     assert FOLDER_B in findings[0].message
     assert _run_main(monkeypatch, readme, opml) == 0
 
