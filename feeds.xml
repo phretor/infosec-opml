@@ -362,6 +362,7 @@
       <outline text="haxrob" title="haxrob" type="rss" xmlUrl="https://haxrob.net/rss.xml" htmlUrl="https://haxrob.net/"></outline>
       <outline text="Heimdal Security Blog" title="Heimdal Security Blog" type="rss" xmlUrl="https://heimdalsecurity.com/blog/feed" htmlUrl="https://heimdalsecurity.com/blog/feed"></outline>
       <outline text="Home on gatari's blog" title="Home on gatari's blog" type="rss" xmlUrl="https://gatari.dev/index.xml" htmlUrl="http://gatari.dev/"></outline>
+      <outline text="ICHI - Internet Cyber Health Index" title="ICHI - Internet Cyber Health Index" type="rss" xmlUrl="https://ichi.global/api/alerts" htmlUrl="https://ichi.global/"></outline>
       <outline text="Intel 471 Blog" title="Intel 471 Blog" type="rss" xmlUrl="https://intel471.com/blog/feed" htmlUrl="https://www.intel471.com/blog"></outline>
       <outline text="jm33_ng" title="jm33_ng" type="rss" xmlUrl="https://jm33.me/feeds/all.atom.xml" htmlUrl="https://jm33.me/"></outline>
       <outline text="klezVirus" title="klezVirus" type="rss" xmlUrl="https://klezvirus.github.io/feed.xml" htmlUrl="https://klezvirus.github.io/"></outline>
