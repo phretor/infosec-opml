@@ -202,8 +202,8 @@
       <outline text="Lexfo's security blog" title="Lexfo's security blog" type="rss" xmlUrl="https://blog.lexfo.fr/feeds/all.atom.xml" htmlUrl="https://blog.lexfo.fr/"></outline>
       <outline text="lolcads tech blog" title="lolcads tech blog" type="rss" xmlUrl="https://lolcads.github.io/index.xml" htmlUrl="https://lolcads.github.io/"></outline>
       <outline text="Malicious Group" title="Malicious Group" type="rss" xmlUrl="https://malicious.group/rss/" htmlUrl="https://malicious.group/"></outline>
-      <outline text="MalwareTech" title="MalwareTech" type="rss" xmlUrl="https://malwaretech.com/feed" htmlUrl="https://malwaretech.com/"></outline>
       <outline text="MalwareTech" title="MalwareTech" type="rss" xmlUrl="https://www.malwaretech.com/feed" htmlUrl="https://malwaretech.com/"></outline>
+      <outline text="MalwareTech" title="MalwareTech" type="rss" xmlUrl="https://malwaretech.com/feed" htmlUrl="https://malwaretech.com/"></outline>
       <outline text="Margin Research" title="Margin Research" type="rss" xmlUrl="https://margin.re/blog/rss/" htmlUrl="https://margin.re/"></outline>
       <outline text="Markuta" title="Markuta" type="rss" xmlUrl="https://markuta.com/index.xml" htmlUrl="https://markuta.com/"></outline>
       <outline text="Matt's internet home" title="Matt's internet home" type="rss" xmlUrl="https://downrightnifty.me/feed.xml" htmlUrl="https://downrightnifty.me/"></outline>
@@ -293,8 +293,8 @@
       <outline text="Will's Root" title="Will's Root" type="rss" xmlUrl="https://www.willsroot.io/feeds/posts/default" htmlUrl="https://www.willsroot.io/"></outline>
       <outline text="XploitBengineer" title="XploitBengineer" type="rss" xmlUrl="https://xploitbengineer.github.io/index.xml" htmlUrl="https://quartz.jzhao.xyz"></outline>
       <outline text="Yoochan Lee" title="Yoochan Lee" type="rss" xmlUrl="https://leeyoochan.github.io/feed.xml" htmlUrl="https://leeyoochan.github.io/"></outline>
-      <outline text="Zero Day Initiative - Blog" title="Zero Day Initiative - Blog" type="rss" xmlUrl="https://www.zerodayinitiative.com/blog?format=rss" htmlUrl="https://www.thezdi.com/blog/"></outline>
       <outline text="Zero Day Initiative - Blog" title="Zero Day Initiative - Blog" type="rss" xmlUrl="https://www.thezdi.com/blog?format=rss" htmlUrl="https://www.thezdi.com/blog/"></outline>
+      <outline text="Zero Day Initiative - Blog" title="Zero Day Initiative - Blog" type="rss" xmlUrl="https://www.zerodayinitiative.com/blog?format=rss" htmlUrl="https://www.thezdi.com/blog/"></outline>
       <outline text="Zeyad Azima" title="Zeyad Azima" type="rss" xmlUrl="https://zeyadazima.com/feed.xml" htmlUrl="https://zeyadazima.com/"></outline>
       <outline text="zolutal’s blog" title="zolutal’s blog" type="rss" xmlUrl="https://blog.zolutal.io/feed.xml" htmlUrl="https://zolutal.github.io/"></outline>
       <outline text="ZwClose" title="ZwClose" type="rss" xmlUrl="https://zwclose.github.io/feed.xml" htmlUrl="https://zwclose.github.io/"></outline>
@@ -362,7 +362,7 @@
       <outline text="haxrob" title="haxrob" type="rss" xmlUrl="https://haxrob.net/rss.xml" htmlUrl="https://haxrob.net/"></outline>
       <outline text="Heimdal Security Blog" title="Heimdal Security Blog" type="rss" xmlUrl="https://heimdalsecurity.com/blog/feed" htmlUrl="https://heimdalsecurity.com/blog/feed"></outline>
       <outline text="Home on gatari's blog" title="Home on gatari's blog" type="rss" xmlUrl="https://gatari.dev/index.xml" htmlUrl="http://gatari.dev/"></outline>
-      <outline text="ICHI - Internet Cyber Health Index" title="ICHI - Internet Cyber Health Index" type="rss" xmlUrl="https://ichi.global/api/alerts" htmlUrl="https://ichi.global/"></outline>
+      <outline text="ICHI — Critical vulnerability advisories" title="ICHI — Critical vulnerability advisories" type="rss" xmlUrl="https://ichi.global/api/alerts" htmlUrl="https://ichi.global/alert"></outline>
       <outline text="Intel 471 Blog" title="Intel 471 Blog" type="rss" xmlUrl="https://intel471.com/blog/feed" htmlUrl="https://www.intel471.com/blog"></outline>
       <outline text="jm33_ng" title="jm33_ng" type="rss" xmlUrl="https://jm33.me/feeds/all.atom.xml" htmlUrl="https://jm33.me/"></outline>
       <outline text="klezVirus" title="klezVirus" type="rss" xmlUrl="https://klezvirus.github.io/feed.xml" htmlUrl="https://klezvirus.github.io/"></outline>
@@ -482,8 +482,8 @@
       <outline text="RIA - Together, we are building and defending the best digital society in the world." title="RIA - Together, we are building and defending the best digital society in the world." type="rss" xmlUrl="https://www.ria.ee/en/news-feed/all/feed" htmlUrl="https://ria.ee/en"></outline>
       <outline text="RIPE Labs" title="RIPE Labs" type="rss" xmlUrl="https://labs.ripe.net/RSS" htmlUrl="https://labs.ripe.net/"></outline>
       <outline text="Stories by CVE Program Blog on Medium" title="Stories by CVE Program Blog on Medium" type="rss" xmlUrl="https://medium.com/feed/@cve_program" htmlUrl="https://medium.com/@cve_program?source=rss-4c76804a1240------2"></outline>
-      <outline text="www.kyberturvallisuuskeskus.fi RSS" title="www.kyberturvallisuuskeskus.fi RSS" type="rss" xmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en/399" htmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en/399"></outline>
       <outline text="www.kyberturvallisuuskeskus.fi RSS" title="www.kyberturvallisuuskeskus.fi RSS" type="rss" xmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en" htmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en"></outline>
+      <outline text="www.kyberturvallisuuskeskus.fi RSS" title="www.kyberturvallisuuskeskus.fi RSS" type="rss" xmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en/399" htmlUrl="https://www.kyberturvallisuuskeskus.fi/feed/rss/en/399"></outline>
     </outline>
     <outline text="11 🔏 Privacy, Crypto &amp; Digital Rights">
       <outline text="A Few Thoughts on Cryptographic Engineering" title="A Few Thoughts on Cryptographic Engineering" type="rss" xmlUrl="https://blog.cryptographyengineering.com/feed/" htmlUrl="https://blog.cryptographyengineering.com/"></outline>
@@ -603,8 +603,8 @@
       <outline text="The Hacker News" title="The Hacker News" type="rss" xmlUrl="https://feeds.feedburner.com/TheHackersNews" htmlUrl="https://thehackernews.com/"></outline>
       <outline text="The Record from Recorded Future News" title="The Record from Recorded Future News" type="rss" xmlUrl="https://therecord.media/feed/" htmlUrl="https://therecord.media/feed"></outline>
       <outline text="Threatpost" title="Threatpost" type="rss" xmlUrl="https://threatpost.com/feed" htmlUrl="https://threatpost.com/"></outline>
-      <outline text="www.theregister.com - Articles" title="www.theregister.com - Articles" type="rss" xmlUrl="https://api.theregister.com/api/v1/article?orderBy=published&amp;site_id=2&amp;remapper=rss" htmlUrl="https://www.theregister.com/"></outline>
       <outline text="www.theregister.com - Articles" title="www.theregister.com - Articles" type="rss" xmlUrl="https://www.theregister.co.uk/security/headlines.atom" htmlUrl="https://www.theregister.com/"></outline>
+      <outline text="www.theregister.com - Articles" title="www.theregister.com - Articles" type="rss" xmlUrl="https://api.theregister.com/api/v1/article?orderBy=published&amp;site_id=2&amp;remapper=rss" htmlUrl="https://www.theregister.com/"></outline>
     </outline>
     <outline text="15 ✍️ Independent Blogs &amp; Commentary">
       <outline text="Adam Caudill" title="Adam Caudill" type="rss" xmlUrl="https://adamcaudill.com/index.xml" htmlUrl="https://adamcaudill.com/"></outline>
@@ -636,8 +636,8 @@
       <outline text="BH Consulting" title="BH Consulting" type="rss" xmlUrl="https://bhconsulting.ie/feed/" htmlUrl="https://bhconsulting.ie/"></outline>
       <outline text="Blog" title="Blog" type="rss" xmlUrl="https://feeds.feedburner.com/akamai/blog" htmlUrl="https://www.akamai.com/blog"></outline>
       <outline text="Blog Archive" title="Blog Archive" type="rss" xmlUrl="https://www.iru.com/blog/archive/rss.xml" htmlUrl="https://www.iru.com/blog/archive"></outline>
-      <outline text="Blog RSS Feed" title="Blog RSS Feed" type="rss" xmlUrl="https://www.tripwire.com/blogs.xml" htmlUrl="https://www.tripwire.com/"></outline>
       <outline text="Blog RSS Feed" title="Blog RSS Feed" type="rss" xmlUrl="https://feeds.feedburner.com/tripwire-state-of-security" htmlUrl="https://www.tripwire.com/"></outline>
+      <outline text="Blog RSS Feed" title="Blog RSS Feed" type="rss" xmlUrl="https://www.tripwire.com/blogs.xml" htmlUrl="https://www.tripwire.com/"></outline>
       <outline text="Deep Instinct Blog: Breaking News and Updates" title="Deep Instinct Blog: Breaking News and Updates" type="rss" xmlUrl="https://www.deepinstinct.com/blog/feed" htmlUrl="https://www.deepinstinct.com/"></outline>
       <outline text="DysruptionHub" title="DysruptionHub" type="rss" xmlUrl="https://dysruptionhub.com/feed/" htmlUrl="https://dysruptionhub.com/"></outline>
       <outline text="FortiGuard Labs | FortiGuard Center - Threat Signal Report" title="FortiGuard Labs | FortiGuard Center - Threat Signal Report" type="rss" xmlUrl="https://filestore.fortinet.com/fortiguard/rss/threatsignal.xml" htmlUrl="https://fortiguard.fortinet.com/rss/threatsignal.xml"></outline>
