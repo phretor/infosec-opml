@@ -3,6 +3,45 @@
 ## 2026-11-01
 
 ### Added
+- Riccardo Ancarani - Red Team Adventures (05 ⚔️ Vulnerability & Exploit Research)
+- Cyber-Threat.net (07 🕵️ Threat Intel, Malware & Detection)
+- Exatrack (07 🕵️ Threat Intel, Malware & Detection)
+- SentinelOne (07 🕵️ Threat Intel, Malware & Detection)
+- haxrob (07 🕵️ Threat Intel, Malware & Detection)
+- codeneverdies! (08 ◀️ Reverse Engineering & DFIR)
+- Search Security Resources and Information from TechTarget (14 🗞️ Security News & Reporting)
+- Jorenar --blog (22 💻 Tech, AI & Science)
+- The Next Web (22 💻 Tech, AI & Science)
+
+### Removed
+- Comsecuris Security Research & Consulting (03 🔐 Platform, Firmware & RoT)
+- Hakai (05 ⚔️ Vulnerability & Exploit Research)
+- Project Zero (05 ⚔️ Vulnerability & Exploit Research)
+- Project Zero (05 ⚔️ Vulnerability & Exploit Research)
+- Riccardo Ancarani - Red Team Adventures (05 ⚔️ Vulnerability & Exploit Research)
+- The Trail of Bits Blog (05 ⚔️ Vulnerability & Exploit Research)
+- Legit Security Blog (06 🔗 Software Supply Chain & AppSec)
+- SonarSource Blog (06 🔗 Software Supply Chain & AppSec)
+- Wiz Blog | RSS feed (06 🔗 Software Supply Chain & AppSec)
+- Exatrack (07 🕵️ Threat Intel, Malware & Detection)
+- NVISO Labs (07 🕵️ Threat Intel, Malware & Detection)
+- SentinelOne (07 🕵️ Threat Intel, Malware & Detection)
+- WeLiveSecurity (07 🕵️ Threat Intel, Malware & Detection)
+- haxrob (07 🕵️ Threat Intel, Malware & Detection)
+- codeneverdies! (08 ◀️ Reverse Engineering & DFIR)
+- Search Security Resources and Information from TechTarget (14 🗞️ Security News & Reporting)
+- HADESS (15 ✍️ Independent Blogs & Commentary)
+- MIT Technology Review (17 💼 Business & Markets)
+- Jorenar --blog (22 💻 Tech, AI & Science)
+- Jorenar --blog (22 💻 Tech, AI & Science)
+- The Next Web (22 💻 Tech, AI & Science)
+
+### Net result
+- 787 feeds across 24 nonempty flat folders
+
+## 2026-11-01
+
+### Added
 - Dispatch-only Miniflux feed maintenance with read-only dry run by default and
   two-input apply guard; repairs verified moved URLs, duplicate aliases, and
   defunct feeds only after review of the action list
