@@ -16,6 +16,8 @@ def main():
 
     tree = ET.parse(FEEDS_XML)
     body = tree.getroot().find("body")
+    if body is None:
+        raise ValueError("OPML document has no body")
 
     folders = []
     feeds = []
@@ -43,7 +45,8 @@ def main():
                     domain = domain.removeprefix("www.")
                     if domain:
                         domains[domain] += 1
-                except Exception:
+                except ValueError:
+                    # Invalid URLs have no countable site domain.
                     pass
                 folder_count += 1
         folders.append((folder_name, folder_count))

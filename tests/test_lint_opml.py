@@ -50,18 +50,13 @@ def test_nested_folder_fails(tmp_path: Path) -> None:
 
 
 def test_missing_xmlurl_fails(tmp_path: Path) -> None:
-    leaf = (
-        '<outline title="e" text="e" htmlUrl="https://x.example/" type="rss"/>'
-    )
+    leaf = '<outline title="e" text="e" htmlUrl="https://x.example/" type="rss"/>'
     errs = lint_opml(_write(tmp_path, FOLDER_OPEN + leaf + FOLDER_CLOSE))
     assert any(e.rule == "missing-attribute" and "xmlUrl" in e.message for e in errs)
 
 
 def test_empty_xmlurl_fails(tmp_path: Path) -> None:
-    leaf = (
-        '<outline title="e" text="e" xmlUrl="" '
-        'htmlUrl="https://x.example/" type="rss"/>'
-    )
+    leaf = '<outline title="e" text="e" xmlUrl="" htmlUrl="https://x.example/" type="rss"/>'
     errs = lint_opml(_write(tmp_path, FOLDER_OPEN + leaf + FOLDER_CLOSE))
     assert any(e.rule == "missing-attribute" and "xmlUrl" in e.message for e in errs)
 
@@ -82,36 +77,27 @@ def test_wrong_type_fails(tmp_path: Path) -> None:
 
 
 def test_missing_type_fails(tmp_path: Path) -> None:
-    leaf = (
-        '<outline title="e" text="e" xmlUrl="https://x.example/" '
-        'htmlUrl="https://x.example/"/>'
-    )
+    leaf = '<outline title="e" text="e" xmlUrl="https://x.example/" htmlUrl="https://x.example/"/>'
     errs = lint_opml(_write(tmp_path, FOLDER_OPEN + leaf + FOLDER_CLOSE))
     assert any(e.rule == "wrong-type" for e in errs)
 
 
 def test_missing_htmlurl_fails(tmp_path: Path) -> None:
-    leaf = (
-        '<outline title="e" text="e" xmlUrl="https://x.example/" type="rss"/>'
-    )
+    leaf = '<outline title="e" text="e" xmlUrl="https://x.example/" type="rss"/>'
     errs = lint_opml(_write(tmp_path, FOLDER_OPEN + leaf + FOLDER_CLOSE))
     assert any(e.rule == "missing-attribute" and "htmlUrl" in e.message for e in errs)
 
 
 def test_missing_text_fails(tmp_path: Path) -> None:
     leaf = (
-        '<outline title="e" xmlUrl="https://x.example/" '
-        'htmlUrl="https://x.example/" type="rss"/>'
+        '<outline title="e" xmlUrl="https://x.example/" htmlUrl="https://x.example/" type="rss"/>'
     )
     errs = lint_opml(_write(tmp_path, FOLDER_OPEN + leaf + FOLDER_CLOSE))
     assert any(e.rule == "missing-attribute" and "text" in e.message for e in errs)
 
 
 def test_missing_title_fails(tmp_path: Path) -> None:
-    leaf = (
-        '<outline text="e" xmlUrl="https://x.example/" '
-        'htmlUrl="https://x.example/" type="rss"/>'
-    )
+    leaf = '<outline text="e" xmlUrl="https://x.example/" htmlUrl="https://x.example/" type="rss"/>'
     errs = lint_opml(_write(tmp_path, FOLDER_OPEN + leaf + FOLDER_CLOSE))
     assert any(e.rule == "missing-attribute" and "title" in e.message for e in errs)
 
@@ -131,6 +117,4 @@ def test_folder_without_emoji_fails(tmp_path: Path) -> None:
 def test_real_feeds_xml_is_clean() -> None:
     """Smoke test: the repo's own feeds.xml must satisfy the lint."""
     errs = lint_opml(Path("feeds.xml"))
-    assert errs == [], "\n".join(
-        f"{e.rule}: {e.message} [{e.location}]" for e in errs
-    )
+    assert errs == [], "\n".join(f"{e.rule}: {e.message} [{e.location}]" for e in errs)

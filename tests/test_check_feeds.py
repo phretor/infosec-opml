@@ -13,9 +13,7 @@ from scripts.check_feeds import MinifluxStatus
 
 
 def _status(disabled: bool = False, count: int = 0, msg: str = "") -> MinifluxStatus:
-    return MinifluxStatus(
-        disabled=disabled, parsing_error_count=count, parsing_error_message=msg
-    )
+    return MinifluxStatus(disabled=disabled, parsing_error_count=count, parsing_error_message=msg)
 
 
 def _mock_client(feeds_payload: list[dict]) -> httpx.Client:
@@ -66,9 +64,7 @@ def test_fetch_miniflux_feeds_builds_map() -> None:
             },
         ]
     )
-    result = check_feeds.fetch_miniflux_feeds(
-        "https://mf.example", "test-token", client=client
-    )
+    result = check_feeds.fetch_miniflux_feeds("https://mf.example", "test-token", client=client)
     assert set(result) == {"https://a.example/feed", "https://b.example/feed"}
     assert result["https://b.example/feed"].disabled is True
     assert result["https://b.example/feed"].parsing_error_count == 5
@@ -86,8 +82,7 @@ def _write_feeds_xml(path: Path, urls_with_folders: list[tuple[str, str, str]]) 
         body_parts.append(f'    <outline text="{folder}">')
         for name, url in feeds:
             body_parts.append(
-                f'      <outline text="{name}" type="rss" '
-                f'xmlUrl="{url}" htmlUrl="{url}"></outline>'
+                f'      <outline text="{name}" type="rss" xmlUrl="{url}" htmlUrl="{url}"></outline>'
             )
         body_parts.append("    </outline>")
     body_parts.append("  </body>")
@@ -105,9 +100,7 @@ _TEST_URL = "https://x.example/feed"
         pytest.param({_TEST_URL: _status(count=5, msg="404")}, 1, id="over-threshold"),
         pytest.param({}, 1, id="missing-from-miniflux"),
         pytest.param({_TEST_URL: _status()}, None, id="ok"),
-        pytest.param(
-            {_TEST_URL: _status(count=1, msg="single blip")}, None, id="transient"
-        ),
+        pytest.param({_TEST_URL: _status(count=1, msg="single blip")}, None, id="transient"),
         pytest.param(
             {
                 _TEST_URL: _status(
@@ -133,9 +126,7 @@ def test_fail_on_dead_exit_matrix(
     monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
     monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
     monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *a, **k: miniflux_payload)
-    monkeypatch.setattr(
-        "sys.argv", ["check_feeds", "--fail-on-dead", "--min-error-count", "3"]
-    )
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--min-error-count", "3"])
 
     if expected_exit is None:
         assert check_feeds.main() is None
@@ -145,9 +136,7 @@ def test_fail_on_dead_exit_matrix(
         assert exc.value.code == expected_exit
 
 
-def test_main_errors_without_credentials(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_main_errors_without_credentials(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     feeds_xml = tmp_path / "feeds.xml"
     _write_feeds_xml(feeds_xml, [("x", "https://x.example/feed", "f")])
     monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
@@ -216,6 +205,60 @@ def test_classify_over_threshold_by_message(message: str, expected: str) -> None
     assert check_feeds.classify(_status(count=3, msg=message), min_error_count=3) == expected
 
 
+_BOT_FORBIDDEN = (
+    "Access to this website is forbidden. Perhaps, this website has a bot protection mechanism?"
+)
+
+
+@pytest.mark.parametrize(
+    ("url", "message"),
+    [
+        ("https://blog.qualys.com/feed", "Cloudflare CAPTCHA challenge"),
+        ("https://rafa.hashnode.dev/rss.xml", "Cloudflare JS challenge"),
+        ("https://aviii.hashnode.dev/rss.xml", "Cloudflare bot challenge"),
+        (
+            "https://blog.mozilla.org/security/feed/",
+            _BOT_FORBIDDEN,
+        ),
+        ("https://www.digitaljournal.com/feed", _unexpected_status(403)),
+    ],
+)
+def test_verified_bot_blocked_feeds_do_not_fail_health_gate(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    url: str,
+    message: str,
+) -> None:
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Protected", url, "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
+    monkeypatch.setattr(
+        check_feeds, "fetch_miniflux_feeds", lambda *a, **k: {url: _status(count=3, msg=message)}
+    )
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+    assert check_feeds.main() is None
+    report = capsys.readouterr().out
+    assert "BOT-BLOCKED EXCEPTIONS" in report
+    assert url in report
+    assert "0 dead" in report
+
+
+@pytest.mark.parametrize(
+    ("url", "message", "disabled"),
+    [
+        ("https://unknown.example/feed", "Cloudflare CAPTCHA challenge", False),
+        ("https://blog.qualys.com/feed", "The requested resource is not found.", False),
+        ("https://blog.qualys.com/feed", _unexpected_status(404), False),
+        ("https://blog.qualys.com/feed", "Cloudflare CAPTCHA challenge", True),
+    ],
+)
+def test_bot_exemption_does_not_hide_other_failures(url: str, message: str, disabled: bool) -> None:
+    assert check_feeds.classify(_status(disabled=disabled, count=3, msg=message), 3, url) == "dead"
+
+
 def test_classify_disabled_stays_dead_even_when_unreachable() -> None:
     status = _status(disabled=True, count=5, msg=_NETWORK_ERR)
     assert check_feeds.classify(status, min_error_count=3) == "dead"
@@ -261,9 +304,7 @@ def test_transient_miniflux_api_failure_does_not_fail(
     assert _main_with_fetch(monkeypatch, tmp_path, _raising_fetch(exc)) is None
 
 
-def test_miniflux_auth_failure_still_fails(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_miniflux_auth_failure_still_fails(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     with pytest.raises(httpx.HTTPStatusError):
         _main_with_fetch(monkeypatch, tmp_path, _raising_fetch(_status_error(401)))
 
@@ -293,9 +334,7 @@ def test_base_opml_marks_new_feeds_missing_from_miniflux_pending(
     monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
     monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
     monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *a, **k: miniflux_payload)
-    monkeypatch.setattr(
-        "sys.argv", ["check_feeds", "--fail-on-dead", "--base-opml", str(base_xml)]
-    )
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--base-opml", str(base_xml)])
 
     if expected_exit is None:
         assert check_feeds.main() is None

@@ -1,6 +1,6 @@
 # Information and Cyber Security RSS/Atom Feeds
 
-A curated collection of 800 information security, cybersecurity, technology, and research RSS/Atom
+A curated collection of 788 information security, cybersecurity, technology, and research RSS/Atom
 feeds organized in a single OPML file. The taxonomy is ordered by reading action and urgency and is
 designed for import into any RSS reader (tested with
 [Inoreader](https://www.inoreader.com)).
@@ -32,14 +32,17 @@ do not support nested folders.
 | 11 🔏 Privacy, Crypto & Digital Rights | Privacy, cryptography, digital rights, and secure communications |
 | 12 📄 Security Papers & Preprints | Academic journals, proceedings, papers, and preprints |
 | 13 🔊 Conferences, CFPs & Talks | Conference announcements, calls for papers, programs, and talks |
-| 14 🗞️ Security News & Commentary | Security reporting, analysis, and commentary |
-| 15 💼 Business & Markets | Technology business, funding, infrastructure markets, and executive coverage |
-| 16 📡 Security Linkstream | High-volume security aggregation and discovery streams |
-| 17 🔩 Hardware, Maker & IoT | General hardware, embedded systems, maker projects, SDR, and IoT |
-| 18 ☁️ Hyperscalers | Product news and engineering updates from major public-cloud platforms |
-| 19 🌩️ Neo-clouds | AI-native and GPU-focused cloud infrastructure providers |
-| 20 💻 Tech, AI & Science | General technology, engineering, AI, and science coverage |
-| 21 📌 Personal & Misc | Personal and cross-domain writing without a stable operational mode |
+| 14 🗞️ Security News & Reporting | Security reporting, analysis, and commentary |
+| 15 ✍️ Independent Blogs & Commentary | Independent researcher and practitioner blogs |
+| 16 🧪 Vendor, Labs & Advisory Feeds | Vendor labs, research teams, and advisory feeds |
+| 17 💼 Business & Markets | Technology business, funding, infrastructure markets, and executive coverage |
+| 18 📡 Security Linkstream | High-volume security aggregation and discovery streams |
+| 19 🔩 Hardware, Maker & IoT | General hardware, embedded systems, maker projects, SDR, and IoT |
+| 20 ☁️ Hyperscalers | Product news and engineering updates from major public-cloud platforms |
+| 21 🌩️ Neo-clouds | AI-native and GPU-focused cloud infrastructure providers |
+| 22 💻 Tech, AI & Science | General technology, engineering, AI, and science coverage |
+| 23 📌 Personal & Misc | Personal and cross-domain writing without a stable operational mode |
+| 24 🌴 Local News | Local and regional news coverage |
 
 The live Miniflux instance retains an empty `00 🧪 Review Queue` for future triage. Miniflux omits
 empty categories from OPML exports, so the folder is not present in `feeds.xml` while it is empty.
@@ -63,6 +66,19 @@ Miniflux to the feeds that merge added (`scripts.miniflux_push`: additive only �
 moves, renames, or edits existing feeds, never creates categories, skips feeds Miniflux already
 has, and ignores merges of the sync PR itself), then runs the sync above so the sync PR reflects
 the result.
+
+For a one-time repair of the verified 2026-11-01 feed failures, dispatch
+`.github/workflows/miniflux-maintenance.yml`. It defaults to a read-only dry run and
+prints every proposed URL repoint/deletion; apply requires both `dry_run=false` and
+`confirm=apply`. Review the dry-run log and obtain approval before applying: the
+script changes Miniflux directly (eight URL repoints and thirteen deletions,
+including both Project Zero blogger aliases; the canonical Project Zero feed
+is already subscribed and stays untouched); it does not edit `feeds.xml`. Missing URLs or
+replacement collisions stop mutation rather than selecting a different feed.
+Five independently verified valid feeds that Miniflux cannot fetch due to bot
+protection remain subscribed and appear separately as non-failing
+`bot-blocked` health exceptions, only for exact URLs and matching challenge/403
+errors. A subsequent sync proposes the updated OPML.
 
 ## Suggesting feeds
 

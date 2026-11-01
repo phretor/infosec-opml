@@ -30,7 +30,7 @@ FEEDS_XML = Path(__file__).resolve().parent.parent / "feeds.xml"
 DEFAULT_MIN_ERROR_COUNT = 3
 HTTP_TIMEOUT = 30.0
 
-Verdict = Literal["ok", "transient", "unreachable", "pending", "dead"]
+Verdict = Literal["ok", "transient", "unreachable", "pending", "bot-blocked", "dead"]
 
 # Prefixes of Miniflux's (en_US) parsing_error_message strings that mean the
 # site was temporarily unreachable rather than gone or broken. Source:
@@ -44,6 +44,27 @@ _TRANSIENT_MESSAGE_PREFIXES = (
     "The website is not available at the moment due to",
 )
 _UNEXPECTED_STATUS_RE = re.compile(r"unexpected HTTP status code: (\d+)")
+
+# These feeds were independently verified valid on 2026-11-01 but Miniflux's
+# IP receives a Cloudflare CAPTCHA/JS challenge or 403 bot protection. This
+# exception applies only to these exact URLs AND matching challenge messages;
+# disabled, missing, 404, and other parsing failures remain dead.
+_BOT_BLOCKED_URLS = frozenset(
+    {
+        "https://blog.qualys.com/feed",
+        "https://rafa.hashnode.dev/rss.xml",
+        "https://aviii.hashnode.dev/rss.xml",
+        "https://blog.mozilla.org/security/feed/",
+        "https://www.digitaljournal.com/feed",
+    }
+)
+_BOT_CHALLENGE_RE = re.compile(
+    r"cloudflare|captcha|bot challenge|javascript challenge|enable javascript",
+    re.IGNORECASE,
+)
+_FORBIDDEN_MESSAGE = (
+    "Access to this website is forbidden. Perhaps, this website has a bot protection mechanism?"
+)
 
 
 @dataclass(frozen=True)
@@ -141,14 +162,21 @@ def is_transient_unreachable(message: str) -> bool:
     return status is None or int(status.group(1)) >= 500
 
 
-def classify(status: MinifluxStatus | None, min_error_count: int) -> Verdict:
+def classify(status: MinifluxStatus | None, min_error_count: int, url: str = "") -> Verdict:
     """Classify one feed given its Miniflux status (or None if missing)."""
     if status is None:
         return "dead"
     if status.disabled:
         return "dead"
     if status.parsing_error_count >= min_error_count:
-        if is_transient_unreachable(status.parsing_error_message):
+        message = status.parsing_error_message.strip()
+        if url in _BOT_BLOCKED_URLS and (
+            _BOT_CHALLENGE_RE.search(message)
+            or message.startswith(_FORBIDDEN_MESSAGE)
+            or "unexpected HTTP status code: 403" in message
+        ):
+            return "bot-blocked"
+        if is_transient_unreachable(message):
             return "unreachable"
         return "dead"
     if status.parsing_error_count > 0:
@@ -173,7 +201,7 @@ def classify_feeds(
         if status is None and f.xml_url in new_urls:
             verdict: Verdict = "pending"
         else:
-            verdict = classify(status, min_error_count)
+            verdict = classify(status, min_error_count, f.xml_url)
         out.append(ClassifiedFeed(feed=f, verdict=verdict, status=status))
     return out
 
@@ -283,6 +311,7 @@ def main() -> None:
         "transient": [],
         "unreachable": [],
         "pending": [],
+        "bot-blocked": [],
         "dead": [],
     }
     for c in classified:
@@ -294,6 +323,7 @@ def main() -> None:
         f"{len(buckets['dead'])} dead, "
         f"{len(buckets['unreachable'])} temporarily unreachable, "
         f"{len(buckets['pending'])} pending, "
+        f"{len(buckets['bot-blocked'])} bot-blocked exception(s), "
         f"{len(buckets['transient'])} transient "
         f"(threshold: parsing_error_count >= {args.min_error_count})\n"
     )
@@ -308,15 +338,17 @@ def main() -> None:
         buckets["unreachable"],
     )
     print_section(
+        "BOT-BLOCKED EXCEPTIONS (verified valid feeds; Miniflux CAPTCHA/JS or 403; not failing)",
+        buckets["bot-blocked"],
+    )
+    print_section(
         "PENDING (new in this PR, not yet in Miniflux; not failing)",
         buckets["pending"],
     )
     if args.min_error_count <= 1:
         transient_title = "TRANSIENT ERRORS (none at this threshold)"
     else:
-        transient_title = (
-            f"TRANSIENT ERRORS (parsing_error_count 1-{args.min_error_count - 1})"
-        )
+        transient_title = f"TRANSIENT ERRORS (parsing_error_count 1-{args.min_error_count - 1})"
     print_section(transient_title, buckets["transient"])
 
     if args.fail_on_dead and buckets["dead"]:

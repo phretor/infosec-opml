@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A curated collection of ~800 information security and cybersecurity RSS/Atom feeds organized in a
+A curated collection of ~788 information security and cybersecurity RSS/Atom feeds organized in a
 single OPML 1.0 file (`feeds.xml`). Designed for import into RSS readers like Inoreader. Maintained
 by Federico Maggi (@phretor).
 
