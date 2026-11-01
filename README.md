@@ -32,14 +32,17 @@ do not support nested folders.
 | 11 🔏 Privacy, Crypto & Digital Rights | Privacy, cryptography, digital rights, and secure communications |
 | 12 📄 Security Papers & Preprints | Academic journals, proceedings, papers, and preprints |
 | 13 🔊 Conferences, CFPs & Talks | Conference announcements, calls for papers, programs, and talks |
-| 14 🗞️ Security News & Commentary | Security reporting, analysis, and commentary |
-| 15 💼 Business & Markets | Technology business, funding, infrastructure markets, and executive coverage |
-| 16 📡 Security Linkstream | High-volume security aggregation and discovery streams |
-| 17 🔩 Hardware, Maker & IoT | General hardware, embedded systems, maker projects, SDR, and IoT |
-| 18 ☁️ Hyperscalers | Product news and engineering updates from major public-cloud platforms |
-| 19 🌩️ Neo-clouds | AI-native and GPU-focused cloud infrastructure providers |
-| 20 💻 Tech, AI & Science | General technology, engineering, AI, and science coverage |
-| 21 📌 Personal & Misc | Personal and cross-domain writing without a stable operational mode |
+| 14 🗞️ Security News & Reporting | Security reporting, analysis, and commentary |
+| 15 ✍️ Independent Blogs & Commentary | Independent researcher and practitioner blogs |
+| 16 🧪 Vendor, Labs & Advisory Feeds | Vendor labs, research teams, and advisory feeds |
+| 17 💼 Business & Markets | Technology business, funding, infrastructure markets, and executive coverage |
+| 18 📡 Security Linkstream | High-volume security aggregation and discovery streams |
+| 19 🔩 Hardware, Maker & IoT | General hardware, embedded systems, maker projects, SDR, and IoT |
+| 20 ☁️ Hyperscalers | Product news and engineering updates from major public-cloud platforms |
+| 21 🌩️ Neo-clouds | AI-native and GPU-focused cloud infrastructure providers |
+| 22 💻 Tech, AI & Science | General technology, engineering, AI, and science coverage |
+| 23 📌 Personal & Misc | Personal and cross-domain writing without a stable operational mode |
+| 24 🌴 Local News | Local and regional news coverage |
 
 The live Miniflux instance retains an empty `00 🧪 Review Queue` for future triage. Miniflux omits
 empty categories from OPML exports, so the folder is not present in `feeds.xml` while it is empty.
