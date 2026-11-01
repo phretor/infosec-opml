@@ -1,6 +1,6 @@
 # Information and Cyber Security RSS/Atom Feeds
 
-A curated collection of 799 information security, cybersecurity, technology, and research RSS/Atom
+A curated collection of 787 information security, cybersecurity, technology, and research RSS/Atom
 feeds organized in a single OPML file. The taxonomy is ordered by reading action and urgency and is
 designed for import into any RSS reader (tested with
 [Inoreader](https://www.inoreader.com)).
