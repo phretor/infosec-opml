@@ -71,8 +71,9 @@ For a one-time repair of the verified 2026-11-01 feed failures, dispatch
 `.github/workflows/miniflux-maintenance.yml`. It defaults to a read-only dry run and
 prints every proposed URL repoint/deletion; apply requires both `dry_run=false` and
 `confirm=apply`. Review the dry-run log and obtain approval before applying: the
-script changes Miniflux directly (nine URL repoints, including the Project Zero
-survivor, and twelve deletions); it does not edit `feeds.xml`. Missing URLs or
+script changes Miniflux directly (eight URL repoints and thirteen deletions,
+including both Project Zero blogger aliases; the canonical Project Zero feed
+is already subscribed and stays untouched); it does not edit `feeds.xml`. Missing URLs or
 replacement collisions stop mutation rather than selecting a different feed.
 Five independently verified valid feeds that Miniflux cannot fetch due to bot
 protection remain subscribed and appear separately as non-failing

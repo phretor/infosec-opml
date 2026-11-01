@@ -27,14 +27,13 @@ class Repair:
     new: str | None = None
 
 
-# Project Zero's first alias survives and is pointed to the canonical feed; the
-# second is removed. Jorenar likewise keeps one of its two broken old URLs.
+# Both Project Zero blogger aliases duplicate an existing canonical subscription.
+# Jorenar keeps one of its two broken old URLs, repointed to the verified feed.
 REPAIRS = (
     Repair(
-        "repoint",
+        "delete",
         "https://googleprojectzero.blogspot.com/feeds/posts/default?alt=rss",
-        "Project Zero canonical feed",
-        "https://projectzero.google/feed.xml",
+        "duplicate Project Zero alias; canonical feed already subscribed",
     ),
     Repair(
         "delete",
