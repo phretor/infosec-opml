@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A curated collection of ~360 information security and cybersecurity RSS/Atom feeds organized in a
+A curated collection of ~800 information security and cybersecurity RSS/Atom feeds organized in a
 single OPML 1.0 file (`feeds.xml`). Designed for import into RSS readers like Inoreader. Maintained
 by Federico Maggi (@phretor).
 
 ## Repository Structure
 
-- `feeds.xml` — The data file. An OPML 1.0 XML document containing all feed subscriptions organized into 26 flat (non-nested) folders identified by emoji prefixes (e.g., `🔐 Security | Top`, `🌐 Security | Blogs`).
+- `feeds.xml` — The data file. An OPML 1.0 XML document containing all feed subscriptions organized into 24 flat (non-nested) folders identified by numeric and emoji prefixes (e.g., `07 🕵️ Threat Intel, Malware & Detection`, `20 ☁️ Hyperscalers`).
 - `README.md` — Project documentation, folder descriptions, maintenance instructions, credits.
 - `CHANGELOG.md` — Log of notable changes to the feed collection.
 - `scripts/` — Python maintenance scripts (managed with uv): `check_feeds.py`, `add_feeds.py`, `stats.py`.
