@@ -3,6 +3,15 @@
 ## 2026-11-01
 
 ### Added
+- ICHI - Internet Cyber Health Index (07 🕵️ Threat Intel, Malware & Detection), first feed added
+  through the merged PR-based feed-suggestion route
+
+### Net result
+- 788 feeds across 24 nonempty flat folders
+
+## 2026-11-01
+
+### Added
 - Riccardo Ancarani - Red Team Adventures (05 ⚔️ Vulnerability & Exploit Research)
 - Cyber-Threat.net (07 🕵️ Threat Intel, Malware & Detection)
 - Exatrack (07 🕵️ Threat Intel, Malware & Detection)
