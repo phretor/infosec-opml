@@ -8,9 +8,10 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report. This repository doesn't accept code PRs — see
-        [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md). The maintainer will update Miniflux and
-        the next scheduled sync will carry the fix into `feeds.xml`.
+        Thanks for taking the time to report. Fixes to existing feeds (removals, moves, metadata)
+        go through this form, not a PR — see [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md). The
+        maintainer will update Miniflux and the next scheduled sync will carry the fix into
+        `feeds.xml`.
 
   - type: input
     id: feed_url

@@ -6,5 +6,5 @@ contact_links:
       has become malicious. See SECURITY.md.
   - name: Pull request policy
     url: https://github.com/phretor/infosec-opml/blob/main/CONTRIBUTING.md
-    about: This repository doesn't accept code PRs. Please read CONTRIBUTING.md before
-      opening one.
+    about: Pull requests may only add feeds to existing folders; everything else goes
+      through an issue. Please read CONTRIBUTING.md before opening one.

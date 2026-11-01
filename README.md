@@ -58,13 +58,19 @@ the threshold whose last error is a temporary reachability failure (network/DNS 
 429 or 5xx), and, in PR checks, feeds added by the PR that Miniflux has not subscribed to yet are
 reported but do not.
 
+The same workflow also runs when a merge to `main` changes `feeds.xml`. It first subscribes
+Miniflux to the feeds that merge added (`scripts.miniflux_push`: additive only — it never removes,
+moves, renames, or edits existing feeds, never creates categories, skips feeds Miniflux already
+has, and ignores merges of the sync PR itself), then runs the sync above so the sync PR reflects
+the result.
+
 ## Suggesting feeds
 
-This repo does not accept code pull requests. The feed list is maintained inside a Miniflux
-instance, and `feeds.xml` is a generated export — any PR against it would be overwritten by the
-next sync. Open an issue instead:
+Pull requests that add feeds to existing folders are welcome: a merged addition is pushed into
+Miniflux, so the next sync keeps it. Removals, moves, and metadata fixes go through an issue, since
+Miniflux is the source of truth and the next sync would revert them:
 
-- **Suggest a feed** — propose a new feed with its URL and category
+- **Suggest a feed** — open a PR, or propose a new feed with its URL and category in an issue
 - **Report a problem** — a feed is dead, misplaced, duplicated, or has wrong metadata
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the full policy and [SECURITY.md](SECURITY.md) for
