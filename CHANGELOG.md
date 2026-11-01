@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-01
+
+### Added
+- Dispatch-only Miniflux feed maintenance with read-only dry run by default and
+  two-input apply guard; repairs verified moved URLs, duplicate aliases, and
+  defunct feeds only after review of the action list
+- Exact-URL, bot-challenge/403-only health exceptions for five independently
+  verified feeds Miniflux cannot fetch; all other failures remain actionable
+
 ## 2026-10-31
 
 ### Added

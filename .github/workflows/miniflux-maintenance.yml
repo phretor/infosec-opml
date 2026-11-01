@@ -1,0 +1,52 @@
+name: Miniflux Feed Maintenance
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview only; disable only after reviewing the dry-run log"
+        type: boolean
+        default: true
+        required: true
+      confirm:
+        description: "Type apply to authorize mutation when dry_run is false"
+        type: string
+        default: ""
+        required: false
+
+permissions: {}
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: miniflux-maintenance
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7  # v10.2.0
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Install project
+        run: uv sync --extra dev
+      - name: Preview or apply maintenance
+        env:
+          MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}  # zizmor: ignore[secrets-outside-env]
+          MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}  # zizmor: ignore[secrets-outside-env]
+          DRY_RUN: ${{ inputs.dry_run }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          set -euo pipefail
+          if [[ "$DRY_RUN" == 'false' && "$CONFIRM" == 'apply' ]]; then
+            uv run python -m scripts.miniflux_maintenance --apply
+          else
+            uv run python -m scripts.miniflux_maintenance --dry-run
+          fi

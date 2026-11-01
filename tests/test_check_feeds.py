@@ -205,6 +205,60 @@ def test_classify_over_threshold_by_message(message: str, expected: str) -> None
     assert check_feeds.classify(_status(count=3, msg=message), min_error_count=3) == expected
 
 
+_BOT_FORBIDDEN = (
+    "Access to this website is forbidden. Perhaps, this website has a bot protection mechanism?"
+)
+
+
+@pytest.mark.parametrize(
+    ("url", "message"),
+    [
+        ("https://blog.qualys.com/feed", "Cloudflare CAPTCHA challenge"),
+        ("https://rafa.hashnode.dev/rss.xml", "Cloudflare JS challenge"),
+        ("https://aviii.hashnode.dev/rss.xml", "Cloudflare bot challenge"),
+        (
+            "https://blog.mozilla.org/security/feed/",
+            _BOT_FORBIDDEN,
+        ),
+        ("https://www.digitaljournal.com/feed", _unexpected_status(403)),
+    ],
+)
+def test_verified_bot_blocked_feeds_do_not_fail_health_gate(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    url: str,
+    message: str,
+) -> None:
+    feeds_xml = tmp_path / "feeds.xml"
+    _write_feeds_xml(feeds_xml, [("Protected", url, "01 Test")])
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
+    monkeypatch.setattr(
+        check_feeds, "fetch_miniflux_feeds", lambda *a, **k: {url: _status(count=3, msg=message)}
+    )
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+    assert check_feeds.main() is None
+    report = capsys.readouterr().out
+    assert "BOT-BLOCKED EXCEPTIONS" in report
+    assert url in report
+    assert "0 dead" in report
+
+
+@pytest.mark.parametrize(
+    ("url", "message", "disabled"),
+    [
+        ("https://unknown.example/feed", "Cloudflare CAPTCHA challenge", False),
+        ("https://blog.qualys.com/feed", "The requested resource is not found.", False),
+        ("https://blog.qualys.com/feed", _unexpected_status(404), False),
+        ("https://blog.qualys.com/feed", "Cloudflare CAPTCHA challenge", True),
+    ],
+)
+def test_bot_exemption_does_not_hide_other_failures(url: str, message: str, disabled: bool) -> None:
+    assert check_feeds.classify(_status(disabled=disabled, count=3, msg=message), 3, url) == "dead"
+
+
 def test_classify_disabled_stays_dead_even_when_unreachable() -> None:
     status = _status(disabled=True, count=5, msg=_NETWORK_ERR)
     assert check_feeds.classify(status, min_error_count=3) == "dead"
