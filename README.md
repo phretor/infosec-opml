@@ -61,6 +61,12 @@ the threshold whose last error is a temporary reachability failure (network/DNS 
 429 or 5xx), and, in PR checks, feeds added by the PR that Miniflux has not subscribed to yet are
 reported but do not.
 
+`normalize_opml` writes a canonical order, not Miniflux's response order: folders sort by their
+`text` (the numeric prefixes encode the taxonomy order), and feeds inside each folder sort
+case-insensitively by `text` (falling back to `title`), with `xmlUrl` as the tiebreaker. Normalization
+is idempotent, and the sync compares the normalized form of both sides, so a response that differs
+only in ordering produces no diff and no PR.
+
 The same workflow also runs when a merge to `main` changes `feeds.xml`. It first subscribes
 Miniflux to the feeds that merge added (`scripts.miniflux_push`: additive only — it never removes,
 moves, renames, or edits existing feeds, never creates categories, skips feeds Miniflux already

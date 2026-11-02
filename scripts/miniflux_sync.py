@@ -7,6 +7,18 @@ either `NoChange` or a `SyncOutput` carrying patched content. All I/O lives in
 
 The OPML normalizer here is the sole acceptable path for anything that writes
 `feeds.xml`.
+
+Canonical order
+---------------
+`normalize_opml` emits a deterministic order rather than Miniflux's response order:
+
+- folders are sorted by their `text` (falling back to `title`), with `title` as a
+  tiebreaker. The numeric prefixes encode the taxonomy order;
+- feeds within a folder are sorted case-insensitively (`str.casefold`) by their
+  `text` (falling back to `title`), with `xmlUrl` as the tiebreaker.
+
+The order is idempotent, and `sync_pipeline` compares the normalized form of both
+sides, so a Miniflux response that differs only in ordering yields `NoChange`.
 """
 
 from __future__ import annotations
@@ -61,7 +73,7 @@ class SyncOutput:
 
 @dataclass(frozen=True)
 class NoChange:
-    """Normalized Miniflux output is byte-identical to current feeds.xml."""
+    """Normalized Miniflux output matches the normalized current feeds.xml."""
 
     reason: str = "no_change"
 
@@ -110,12 +122,34 @@ def _attr_fragment(outline: ET.Element, order: tuple[str, ...]) -> str:
     return " ".join(parts)
 
 
+def _folder_sort_key(folder: ET.Element) -> tuple[str, str]:
+    """Return the canonical sort key for a folder outline."""
+    return (
+        folder.get("text") or folder.get("title") or "",
+        folder.get("title") or "",
+    )
+
+
+def _feed_sort_key(feed: ET.Element) -> tuple[str, str]:
+    """Return the canonical sort key for a feed outline.
+
+    Case-insensitive `text` (falling back to `title`), then `xmlUrl` because
+    several feeds share a display name and differ only by URL.
+    """
+    return (
+        (feed.get("text") or feed.get("title") or "").casefold(),
+        feed.get("xmlUrl") or "",
+    )
+
+
 def normalize_opml(opml_text: str) -> str:
     """Produce a stable 2-space-indented OPML 1.0 string from any OPML input.
 
     Attribute emission order is fixed: `text, title, type, xmlUrl, htmlUrl` on
     feed outlines; `text, title` on folders. Empty folders are omitted so the
-    output matches the repo convention (Miniflux already omits them).
+    output matches the repo convention (Miniflux already omits them). Output
+    order is canonical, not input order: folders sort by `text`, feeds sort by
+    case-insensitive `text` then `xmlUrl`.
     """
     root = ET.fromstring(opml_text)
     body = root.find("body")
@@ -130,16 +164,26 @@ def normalize_opml(opml_text: str) -> str:
     ]
 
     if body is not None:
-        for folder in body:
-            if folder.tag != "outline":
-                continue
-            feed_children = [
-                child
-                for child in folder
-                if child.tag == "outline" and child.get("xmlUrl") is not None
-            ]
-            if not feed_children:
-                continue
+        folders = sorted(
+            (
+                folder
+                for folder in body
+                if folder.tag == "outline"
+                and any(
+                    child.tag == "outline" and child.get("xmlUrl") is not None for child in folder
+                )
+            ),
+            key=_folder_sort_key,
+        )
+        for folder in folders:
+            feed_children = sorted(
+                (
+                    child
+                    for child in folder
+                    if child.tag == "outline" and child.get("xmlUrl") is not None
+                ),
+                key=_feed_sort_key,
+            )
             folder_attrs = _attr_fragment(folder, FOLDER_ATTR_ORDER)
             lines.append(f"    <outline {folder_attrs}>")
             for feed in feed_children:
@@ -249,12 +293,13 @@ def sync_pipeline(
 ) -> SyncResult:
     """Pure sync function. No I/O.
 
-    Returns `NoChange` when the normalized Miniflux output is byte-identical to
-    the current `feeds.xml`; otherwise returns a `SyncOutput` with the patched
-    files and change sets.
+    Returns `NoChange` when the normalized Miniflux output matches the
+    normalized current `feeds.xml`, so formatting-only and ordering-only
+    differences produce no diff (and no PR); otherwise returns a `SyncOutput`
+    with the patched files and change sets.
     """
     normalized = normalize_opml(miniflux_opml)
-    if normalized == current_feeds_xml:
+    if current_feeds_xml.strip() and normalized == normalize_opml(current_feeds_xml):
         return NoChange()
 
     current_feeds = parse_opml(current_feeds_xml) if current_feeds_xml.strip() else []
