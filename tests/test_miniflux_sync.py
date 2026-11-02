@@ -1,5 +1,6 @@
 """Tests for the pure sync pipeline. No HTTP, no filesystem writes."""
 
+import xml.etree.ElementTree as ET
 from datetime import date
 from pathlib import Path
 
@@ -15,6 +16,25 @@ from scripts.miniflux_sync import (
 
 FIXTURES = Path(__file__).parent / "fixtures"
 SYNC_DATE = date(2026, 10, 8)
+
+
+def _reverse_order(opml_text: str) -> str:
+    """Return the same OPML with folders and feeds in reverse source order."""
+    root = ET.fromstring(opml_text)
+    body = root.find("body")
+    assert body is not None
+    for folder in list(body):
+        children = list(folder)
+        for child in children:
+            folder.remove(child)
+        for child in reversed(children):
+            folder.append(child)
+    folders = list(body)
+    for folder in folders:
+        body.remove(folder)
+    for folder in reversed(folders):
+        body.append(folder)
+    return ET.tostring(root, encoding="unicode")
 
 
 @pytest.fixture
@@ -140,14 +160,110 @@ def test_patch_readme_raises_on_missing_anchor() -> None:
         patch_readme(broken_readme, 1, 1)
 
 
-def test_changelog_entry_omitted_when_only_formatting_changed(
+def test_normalize_emits_canonical_order(base_opml: str) -> None:
+    """Folders sort by text; feeds sort case-insensitively by text."""
+    out = normalize_opml(_reverse_order(base_opml))
+    assert out == normalize_opml(base_opml)
+    assert out.index('text="01 🚨 Alerts') < out.index('text="02 📩 Curated')
+    assert out.index('text="CISA Advisories"') < out.index('text="Full Disclosure"')
+
+
+def test_reordered_response_produces_byte_identical_feeds_xml(base_opml: str) -> None:
+    """A Miniflux response that only reorders folders/feeds normalizes identically."""
+    canonical = normalize_opml(base_opml)
+    assert normalize_opml(_reverse_order(base_opml)) == canonical
+
+
+def test_same_named_feeds_sort_by_xml_url() -> None:
+    """Duplicate display names are ordered by xmlUrl so ties are deterministic."""
+    opml = (
+        '<?xml version="1.0"?><opml version="2.0"><body>'
+        '<outline text="01 🚨 Alerts &amp; Advisories">'
+        '<outline text="Same" title="Same" type="rss" '
+        'xmlUrl="https://b.example/feed" htmlUrl="https://b.example/"></outline>'
+        '<outline text="Same" title="Same" type="rss" '
+        'xmlUrl="https://a.example/feed" htmlUrl="https://a.example/"></outline>'
+        "</outline></body></opml>"
+    )
+    out = normalize_opml(opml)
+    assert out.index("https://a.example/feed") < out.index("https://b.example/feed")
+
+
+def test_feed_sort_is_case_insensitive() -> None:
+    opml = (
+        '<?xml version="1.0"?><opml version="2.0"><body>'
+        '<outline text="01 🚨 Alerts &amp; Advisories">'
+        '<outline text="zeta" title="zeta" type="rss" '
+        'xmlUrl="https://z.example/feed" htmlUrl="https://z.example/"></outline>'
+        '<outline text="Alpha" title="Alpha" type="rss" '
+        'xmlUrl="https://a.example/feed" htmlUrl="https://a.example/"></outline>'
+        "</outline></body></opml>"
+    )
+    out = normalize_opml(opml)
+    assert out.index('text="Alpha"') < out.index('text="zeta"')
+
+
+def test_order_only_difference_is_no_change(
+    base_opml: str, current_feeds_xml: str, current_readme: str, current_changelog: str
+) -> None:
+    """A reordered response must return NoChange so the workflow opens no PR."""
+    result = sync_pipeline(
+        _reverse_order(base_opml),
+        current_feeds_xml,
+        current_readme,
+        current_changelog,
+        SYNC_DATE,
+    )
+    assert isinstance(result, NoChange)
+
+
+def test_unnormalized_current_file_is_no_change(
     base_opml: str, current_readme: str, current_changelog: str
 ) -> None:
-    """If feeds.xml differs only by formatting (e.g. first-time normalization),
-    there's no net add/remove — the CHANGELOG must not grow."""
-    unnormalized = base_opml
-    result = sync_pipeline(base_opml, unnormalized, current_readme, current_changelog, SYNC_DATE)
+    """Formatting/order drift in the current file alone must not open a PR."""
+    result = sync_pipeline(
+        base_opml,
+        _reverse_order(base_opml),
+        current_readme,
+        current_changelog,
+        SYNC_DATE,
+    )
+    assert isinstance(result, NoChange)
+
+
+def test_reorder_plus_addition_is_detected(
+    current_feeds_xml: str, current_readme: str, current_changelog: str
+) -> None:
+    incoming = _reverse_order((FIXTURES / "miniflux_added_folder.opml").read_text(encoding="utf-8"))
+
+    result = sync_pipeline(
+        incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE
+    )
+
+    assert isinstance(result, SyncOutput)
+    assert [f.xml_url for f in result.added] == ["https://claroty.com/team82/feed"]
+    assert result.removed == ()
+    assert result.feed_count == 4
+    assert result.folder_count == 3
+    assert result.new_feeds_xml == normalize_opml(incoming)
+    assert "### Added" in result.new_changelog.split("## 2026-01-01")[0]
+
+
+def test_reorder_plus_removal_is_detected(
+    current_feeds_xml: str, current_readme: str, current_changelog: str
+) -> None:
+    incoming = _reverse_order(
+        (FIXTURES / "miniflux_removed_folder.opml").read_text(encoding="utf-8")
+    )
+
+    result = sync_pipeline(
+        incoming, current_feeds_xml, current_readme, current_changelog, SYNC_DATE
+    )
+
     assert isinstance(result, SyncOutput)
     assert result.added == ()
-    assert result.removed == ()
-    assert result.new_changelog == current_changelog
+    assert [f.xml_url for f in result.removed] == ["https://risky.biz/feeds/risky-business/"]
+    assert result.feed_count == 2
+    assert result.folder_count == 1
+    assert result.new_feeds_xml == normalize_opml(incoming)
+    assert "### Removed" in result.new_changelog.split("## 2026-01-01")[0]
