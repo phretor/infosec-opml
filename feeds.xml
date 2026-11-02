@@ -111,8 +111,8 @@
       <outline text="Adam Doupé" title="Adam Doupé" type="rss" xmlUrl="https://adamdoupe.com/atom.xml" htmlUrl="http://adamdoupe.com/"></outline>
       <outline text="Alexander Popov" title="Alexander Popov" type="rss" xmlUrl="https://a13xp0p0v.github.io/feed.xml" htmlUrl="https://a13xp0p0v.tech/"></outline>
       <outline text="Allele Security Intelligence" title="Allele Security Intelligence" type="rss" xmlUrl="https://allelesecurity.com/feed/" htmlUrl="https://allelesecurity.com"></outline>
-      <outline text="Almond Offensive Security Blog" title="Almond Offensive Security Blog" type="rss" xmlUrl="https://offsec.almond.consulting/feeds/all.rss.xml" htmlUrl="https://offsec.almond.consulting/"></outline>
       <outline text="Almond Offensive Security Blog" title="Almond Offensive Security Blog" type="rss" xmlUrl="https://offsec.almond.consulting/feeds/all.atom.xml" htmlUrl="https://offsec.almond.consulting/"></outline>
+      <outline text="Almond Offensive Security Blog" title="Almond Offensive Security Blog" type="rss" xmlUrl="https://offsec.almond.consulting/feeds/all.rss.xml" htmlUrl="https://offsec.almond.consulting/"></outline>
       <outline text="Almost Secure" title="Almost Secure" type="rss" xmlUrl="https://palant.info/rss.xml" htmlUrl="https://palant.info/"></outline>
       <outline text="Andrey Konovalov" title="Andrey Konovalov" type="rss" xmlUrl="https://xairy.io/feed.xml" htmlUrl="https://xairy.io/"></outline>
       <outline text="Android Offensive Security Blog" title="Android Offensive Security Blog" type="rss" xmlUrl="https://androidoffsec.withgoogle.com/index.xml" htmlUrl="https://androidoffsec.withgoogle.com/"></outline>
@@ -302,8 +302,8 @@
     <outline text="06 🔗 Software Supply Chain &amp; AppSec">
       <outline text="Mozilla Security Blog" title="Mozilla Security Blog" type="rss" xmlUrl="https://blog.mozilla.org/security/feed/" htmlUrl="https://blog.mozilla.org/security/"></outline>
       <outline text="Rafa's Security Researches" title="Rafa's Security Researches" type="rss" xmlUrl="https://rafa.hashnode.dev/rss.xml" htmlUrl="https://blog.bugport.net"></outline>
-      <outline text="The Offensive Perspective" title="The Offensive Perspective" type="rss" xmlUrl="https://aviii.hashnode.dev/rss.xml" htmlUrl="https://aviii.hashnode.dev"></outline>
       <outline text="Socket" title="Socket" type="rss" xmlUrl="https://socket.dev/api/blog/feed.atom" htmlUrl="https://socket.dev/api/blog/feed.json"></outline>
+      <outline text="The Offensive Perspective" title="The Offensive Perspective" type="rss" xmlUrl="https://aviii.hashnode.dev/rss.xml" htmlUrl="https://aviii.hashnode.dev"></outline>
       <outline text="0xInfection's Blog — Ramblings of an Infected Geek" title="0xInfection's Blog — Ramblings of an Infected Geek" type="rss" xmlUrl="https://0xinfection.xyz/index.xml" htmlUrl="https://0xinfection.xyz/"></outline>
       <outline text="0xPat blog" title="0xPat blog" type="rss" xmlUrl="https://0xpat.github.io/feed.xml" htmlUrl="https://0xpat.github.io/"></outline>
       <outline text="2024 Sonatype Blog" title="2024 Sonatype Blog" type="rss" xmlUrl="https://blog.sonatype.com/rss.xml" htmlUrl="https://www.sonatype.com/blog"></outline>
