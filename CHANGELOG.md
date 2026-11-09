@@ -2,6 +2,15 @@
 
 ## 2026-11-09
 
+### Removed
+- Firmware  Security (03 🔐 Platform, Firmware & RoT)
+- R0rt1z2 (08 ◀️ Reverse Engineering & DFIR)
+
+### Net result
+- 786 feeds across 24 nonempty flat folders
+
+## 2026-11-09
+
 ### Changed
 - Feed health probes URLs with bounded retries and validates RSS/Atom responses,
   including Brotli and feeds up to 16 MiB. Runner results are client-specific
