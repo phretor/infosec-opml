@@ -1,16 +1,18 @@
-"""Probe each OPML feed from this client; Miniflux errors are historical context only.
+"""Report runner feed probes; freshly refreshed Miniflux is the in-cluster authority.
 
-Policy: a 2xx response is healthy only with a complete, parseable RSS/RDF/Atom
-feed body. Live 404/410 is gone (the only failing verdict); 403 or a recognizable
-bot/CAPTCHA/JavaScript challenge is blocked-to-this-client, not dead. Timeouts,
-connection failures, 429, 5xx, oversized bodies and other inconclusive
-responses are unreachable now, never proof of retirement. Invalid 2xx XML/HTML
-is reported separately and is not automatically gone. Follow redirects, read
-at most 8 MiB, and retry transient transport errors, 429 and 5xx twice with
-0.3/0.6 second backoff.
-Each URL gets at most three requests, with 24 workers and 4s connect / 6s read
-timeouts. --fail-on-dead fails only on live 404/410. --base-opml marks new feeds
-in the report; --min-error-count filters optional Miniflux warning annotations.
+Runner-side HTTP evidence is client/IP-specific and supplementary, not a CI gate.
+A 2xx response is healthy only with a complete, parseable RSS/RDF/Atom feed.
+Live 404/410 is gone on this client; 403/challenges are blocked-to-this-client.
+Network failures, 429, 5xx and oversized bodies are inconclusive/unreachable.
+Malformed XML/HTML is invalid, not proof of retirement. Follow redirects, read
+at most 16 MiB, and retry transient failures twice with 0.3/0.6s backoff.
+Each URL gets at most three requests (24 workers; 4s connect/6s read timeouts).
+
+With credentials, refresh Miniflux feeds in error or flagged by the runner,
+then re-read status. Only successfully refreshed feeds have an authoritative
+in-cluster verdict; no credentials or failed refresh means no authoritative
+verdict. CI never uses --fail-on-dead. Manual --fail-on-dead fails on a runner
+404/410; --base-opml annotates new feeds, and --min-error-count filters history.
 """
 
 from __future__ import annotations
@@ -31,7 +33,7 @@ FEEDS_XML = Path(__file__).resolve().parent.parent / "feeds.xml"
 DEFAULT_MIN_ERROR_COUNT = 3
 WORKERS = 24
 MAX_ATTEMPTS = 3
-MAX_BODY = 8 * 1024 * 1024
+MAX_BODY = 16 * 1024 * 1024
 HEADERS = {
     "User-Agent": "infosec-opml-feed-health/1.0 (+https://github.com/phretor/infosec-opml)",
     "Accept": (
@@ -55,6 +57,8 @@ class MinifluxStatus:
     disabled: bool
     parsing_error_count: int
     parsing_error_message: str
+    id: int | None = None
+    checked_at: str = ""
 
 
 @dataclass(frozen=True)
@@ -64,6 +68,10 @@ class Probe:
     final_url: str
     detail: str = ""
     attempts: int = 1
+    content_type: str = ""
+    content_encoding: str = ""
+    charset: str = ""
+    sample: str = ""
 
 
 def parse_feeds(path: Path) -> list[FeedRow]:
@@ -79,19 +87,115 @@ def parse_feeds(path: Path) -> list[FeedRow]:
     ]
 
 
-def fetch_miniflux_feeds(base_url: str, token: str) -> dict[str, MinifluxStatus]:
-    """Optional diagnostic data; failure never changes a live probe verdict."""
-    with httpx.Client(timeout=TIMEOUT, follow_redirects=True) as client:
-        response = client.get(base_url.rstrip("/") + "/v1/feeds", headers={"X-Auth-Token": token})
-        response.raise_for_status()
-        return {
-            row["feed_url"]: MinifluxStatus(
-                bool(row.get("disabled", False)),
-                int(row.get("parsing_error_count", 0)),
-                str(row.get("parsing_error_message", "")),
+def fetch_miniflux_feeds(
+    base_url: str, token: str, client: httpx.Client | None = None
+) -> dict[str, MinifluxStatus]:
+    """Read Miniflux feed records; the initial view is historical, not a verdict."""
+    if client is None:
+        with httpx.Client(timeout=TIMEOUT, follow_redirects=True) as owned:
+            return fetch_miniflux_feeds(base_url, token, owned)
+    response = client.get(base_url.rstrip("/") + "/v1/feeds", headers={"X-Auth-Token": token})
+    response.raise_for_status()
+    return {
+        row["feed_url"]: MinifluxStatus(
+            bool(row.get("disabled", False)),
+            int(row.get("parsing_error_count", 0)),
+            str(row.get("parsing_error_message", "")),
+            int(row["id"]) if row.get("id") is not None else None,
+            str(row.get("checked_at", "")),
+        )
+        for row in response.json()
+    }
+
+
+def classify_fresh(status: MinifluxStatus) -> Verdict:
+    """Verdict only after this invocation has refreshed this Miniflux feed."""
+    if status.parsing_error_count == 0:
+        return "healthy"
+    message = status.parsing_error_message.lower()
+    if any(
+        marker in message
+        for marker in ("http 404", "http 410", "status code: 404", "status code: 410")
+    ):
+        return "gone"
+    if "403" in message or "captcha" in message or "cloudflare" in message:
+        return "blocked-to-this-client"
+    if any(
+        marker in message
+        for marker in (
+            "timeout",
+            "timed out",
+            "network",
+            "429",
+            "too many",
+            "bad gateway",
+            "server error",
+            "not available at the moment",
+        )
+    ):
+        return "unreachable"
+    return "invalid"
+
+
+def refresh_miniflux_feeds(
+    feeds: list[FeedRow],
+    probes: dict[str, Probe],
+    base_url: str,
+    token: str,
+    client: httpx.Client | None = None,
+    sleep=time.sleep,
+) -> tuple[dict[str, MinifluxStatus], dict[str, str], dict[str, MinifluxStatus]]:
+    """Refresh flagged subscriptions with bounded parallelism; re-read synchronous results.
+
+    Only successful PUT 204 and a subsequent GET qualify as fresh. An unchanged
+    nonempty checked_at timestamp after refresh disqualifies that feed.
+    """
+    if client is None:
+        with httpx.Client(timeout=httpx.Timeout(45, connect=4, pool=4)) as owned:
+            return refresh_miniflux_feeds(feeds, probes, base_url, token, owned, sleep)
+    before = fetch_miniflux_feeds(base_url, token, client)
+    candidates = {
+        feed.xml_url: before[feed.xml_url]
+        for feed in feeds
+        if feed.xml_url in before
+        and before[feed.xml_url].id is not None
+        and not before[feed.xml_url].disabled
+        and (
+            before[feed.xml_url].parsing_error_count > 0
+            or probes[feed.xml_url].verdict != "healthy"
+        )
+    }
+
+    def refresh(url: str, status: MinifluxStatus) -> str:
+        try:
+            response = client.put(
+                base_url.rstrip("/") + f"/v1/feeds/{status.id}/refresh",
+                headers={"X-Auth-Token": token},
+                timeout=httpx.Timeout(45, connect=4, pool=4),
             )
-            for row in response.json()
-        }
+            response.raise_for_status()
+            if response.status_code != 204:
+                return f"unexpected refresh HTTP {response.status_code}"
+            return ""
+        except httpx.HTTPError as exc:
+            return f"refresh {type(exc).__name__}: {exc}"
+
+    with ThreadPoolExecutor(max_workers=6) as pool:
+        results = list(pool.map(lambda item: refresh(*item), candidates.items()))
+    failures = {url: reason for url, reason in zip(candidates, results) if reason}
+    if candidates:
+        sleep(0.5)
+    after = fetch_miniflux_feeds(base_url, token, client)
+    fresh: dict[str, MinifluxStatus] = {}
+    for url, previous in candidates.items():
+        if url in failures:
+            continue
+        status = after.get(url)
+        if status is None or (previous.checked_at and status.checked_at == previous.checked_at):
+            failures[url] = "refresh not observable in subsequent Miniflux feed record"
+        else:
+            fresh[url] = status
+    return fresh, failures, before
 
 
 def _feed_xml(body: bytes) -> bool:
@@ -141,6 +245,11 @@ def probe_feed(url: str, client: httpx.Client, sleep=time.sleep) -> Probe:
             with client.stream("GET", url, headers=HEADERS, follow_redirects=True) as response:
                 status = response.status_code
                 final = str(response.url)
+                metadata = {
+                    "content_type": response.headers.get("content-type", ""),
+                    "content_encoding": response.headers.get("content-encoding", ""),
+                    "charset": response.encoding or "",
+                }
                 # Only read bodies relevant to feed validity / challenge detection.
                 body = b""
                 if status == 403 or 200 <= status < 300 or status == 429 or status >= 500:
@@ -160,18 +269,29 @@ def probe_feed(url: str, client: httpx.Client, sleep=time.sleep) -> Probe:
                             "unreachable",
                             status,
                             final,
-                            "body exceeds 8 MiB cap",
+                            "body exceeds 16 MiB cap",
                             attempt,
                         )
                     if _feed_xml(body):
                         return Probe("healthy", status, final, attempts=attempt)
                     challenge = _challenge(body)
+                    if body.lstrip().lower().startswith((b"<html", b"<!doctype html")):
+                        detail = "HTML document"
+                    else:
+                        try:
+                            ET.fromstring(body)
+                        except ET.ParseError as exc:
+                            detail = f"malformed XML: {exc}"
+                        else:
+                            detail = "XML without RSS/Atom feed root/content"
                     return Probe(
                         "blocked-to-this-client" if challenge else "invalid",
                         status,
                         final,
-                        "challenge page" if challenge else "not a parseable RSS/Atom feed",
+                        "challenge page" if challenge else detail,
                         attempt,
+                        sample=repr(body[:200]),
+                        **metadata,
                     )
                 if _challenge(body):
                     return Probe("blocked-to-this-client", status, final, attempts=attempt)
@@ -231,22 +351,50 @@ def main() -> None:
     if args.base_opml:
         old_urls = {feed.xml_url for feed in parse_feeds(args.base_opml)}
         new_urls = {feed.xml_url for feed in feeds} - old_urls
+    probes = probe_feeds(feeds)
     miniflux: dict[str, MinifluxStatus] = {}
+    fresh: dict[str, MinifluxStatus] = {}
+    refresh_failures: dict[str, str] = {}
     if os.environ.get("MINIFLUX_URL") and os.environ.get("MINIFLUX_TOKEN"):
         try:
-            miniflux = fetch_miniflux_feeds(
-                os.environ["MINIFLUX_URL"], os.environ["MINIFLUX_TOKEN"]
+            fresh, refresh_failures, miniflux = refresh_miniflux_feeds(
+                feeds,
+                probes,
+                os.environ["MINIFLUX_URL"],
+                os.environ["MINIFLUX_TOKEN"],
             )
-        except (httpx.HTTPError, ValueError, KeyError) as exc:
-            print(f"Miniflux diagnostics unavailable: {exc}", file=sys.stderr)
-    probes = probe_feeds(feeds)
+        except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+            print(f"Miniflux refresh unavailable: {exc}; no in-cluster verdict", file=sys.stderr)
+    else:
+        print("Miniflux credentials unavailable; no in-cluster verdict", file=sys.stderr)
     buckets: dict[Verdict, list[FeedRow]] = {
         key: [] for key in ("healthy", "gone", "blocked-to-this-client", "unreachable", "invalid")
     }
     for feed in feeds:
         buckets[probes[feed.xml_url].verdict].append(feed)
-    print(f"Feeds: {len(feeds)} in feeds.xml; {len(miniflux)} Miniflux diagnostics")
+    print(f"Feeds: {len(feeds)} in feeds.xml; {len(miniflux)} Miniflux records")
+    print("Runner-only, client-specific supplementary evidence (never a CI verdict):")
     print("Results: " + ", ".join(f"{len(rows)} {verdict}" for verdict, rows in buckets.items()))
+    if fresh:
+        fresh_counts = {key: 0 for key in buckets}
+        for url, status in fresh.items():
+            verdict = classify_fresh(status)
+            fresh_counts[verdict] += 1
+            if verdict != "healthy":
+                print(
+                    f"  [in-cluster {verdict}] {url} | after refresh: "
+                    f"{status.parsing_error_count} error(s): {status.parsing_error_message[:160]}"
+                )
+        print(
+            "Refreshed Miniflux (in-cluster authority, refreshed subset only): "
+            + ", ".join(f"{value} {key}" for key, value in fresh_counts.items())
+        )
+    else:
+        print(
+            "Refreshed Miniflux: no authoritative verdict (refresh unavailable or no flagged feeds)"
+        )
+    for url, reason in refresh_failures.items():
+        print(f"  [no authoritative verdict] {url}: {reason}")
     for verdict, rows in buckets.items():
         if not rows or verdict == "healthy":
             continue
@@ -260,6 +408,12 @@ def main() -> None:
             )
             if result.detail:
                 print(f"    Evidence: {result.detail}")
+            if result.verdict == "invalid":
+                print(
+                    f"    Response: content-type={result.content_type or 'none'}; "
+                    f"content-encoding={result.content_encoding or 'none'}; "
+                    f"charset={result.charset or 'none'}; first 200 decoded bytes={result.sample}"
+                )
             previous = miniflux.get(feed.xml_url)
             if previous and (
                 previous.parsing_error_count >= args.min_error_count or previous.disabled

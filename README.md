@@ -53,21 +53,32 @@ empty categories from OPML exports, so the folder is not present in `feeds.xml` 
 (`.github/workflows/miniflux-sync.yml`, also runnable via `workflow_dispatch`). The workflow fetches
 Miniflux's OPML export, normalizes it, and — on a real diff — opens or updates a single long-lived
 PR on `bot/miniflux-sync` with the patched `feeds.xml`, README counts, and a mechanical CHANGELOG
-entry. A separate downstream job runs `scripts.check_feeds --fail-on-dead` on the resulting
-file; it cannot change the completed sync job or prevent its PR from opening. The check
-directly fetches every feed from its runner with a feed-aware User-Agent and Accept header,
-follows redirects, caps bodies at 8 MiB, and uses up to three attempts (0.3/0.6s backoff
-for connection errors, timeouts, 429 and 5xx). It uses 24 workers, 4s connect/6s read
-timeouts and a 25-minute job limit. A complete, parseable RSS/Atom response with HTTP 2xx
-is healthy. Live 404/410 is gone and fails `--fail-on-dead`; 403 or a CAPTCHA/JS challenge
-is blocked-to-this-client, not dead. Timeouts, network errors, 429, 5xx, bodies
-exceeding the read cap, and other inconclusive statuses are unreachable now,
-not dead. Invalid 2xx XML/HTML is reported separately, not treated as proof of
-retirement. The report includes final redirect URL, HTTP status and retry count.
-Miniflux error counters are optional historical
-annotations, never verdicts; `--min-error-count` filters those annotations. `--base-opml`
-marks PR additions without exempting them from live probing. Health checks run on fork PRs
-without Miniflux credentials, as an independent advisory job.
+entry. A separate downstream job runs `scripts.check_feeds` after sync has opened its
+PR; the health job is report-only and cannot change sync's result or block that PR.
+PR health is also report-only. GitHub runners have different IPs from readers and
+publishers may block them, so runner HTTP results are **client-specific supplementary
+evidence**, never a CI verdict—even a runner 404/410 is surfaced for human review,
+not a red check. Both health jobs have a 25-minute timeout.
+
+The runner probe fetches every feed with a feed-aware User-Agent and Accept header,
+follows redirects, supports Brotli/gzip, caps decoded bodies at 16 MiB, and retries
+transport/429/5xx failures twice with 0.3/0.6s backoff (24 workers, 4s connect/6s
+read timeouts). HTTP 2xx is healthy only with complete parseable RSS/Atom XML;
+404/410 is gone **from that client**, 403 or a CAPTCHA/JS challenge is blocked-to-
+this-client, and network failures/429/5xx/oversized bodies are unreachable now.
+Malformed XML or HTML is reported separately with response headers, a short
+decoded-byte sample and XML parser error; it is not proof of a dead feed.
+
+With credentials, the job reads Miniflux subscriptions, synchronously refreshes
+feeds with errors or flagged by the runner (`PUT /v1/feeds/{id}/refresh`, up to six
+concurrent requests with 45s timeouts), waits briefly, and re-reads `/v1/feeds`.
+Only successfully refreshed feeds whose updated state is observable yield an
+**in-cluster authoritative** health result; stale counters, unavailable refresh,
+and feeds not refreshed yield no in-cluster verdict. Refresh failure never blocks
+the report. Fork PRs lack Miniflux secrets and show runner evidence only, explicitly
+without an authoritative verdict. `--base-opml` annotates new PR feeds;
+`--min-error-count` filters historical Miniflux annotations. The optional
+`--fail-on-dead` remains for **manual local use only**; CI never supplies it.
 
 `normalize_opml` writes a canonical order, not Miniflux's response order: folders sort by their
 `text` (the numeric prefixes encode the taxonomy order), and feeds inside each folder sort

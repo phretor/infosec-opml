@@ -5,7 +5,7 @@ description = "Curated collection of infosec RSS/Atom feeds in OPML format"
 requires-python = ">=3.12"
 dependencies = [
     "requests>=2.31",
-    "httpx>=0.27",
+    "httpx[brotli]>=0.27",
 ]
 
 [project.optional-dependencies]

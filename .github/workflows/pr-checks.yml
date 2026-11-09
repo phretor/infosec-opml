@@ -159,7 +159,7 @@ jobs:
 
   health:
     name: Feed health (advisory)
-    # No Miniflux secrets required: probe every feed even on fork PRs.
+    # Forks lack Miniflux secrets; runner probes remain supplementary and report-only.
     runs-on: ubuntu-latest
     timeout-minutes: 25
     permissions:
@@ -180,7 +180,10 @@ jobs:
         run: uv sync --extra dev
       - name: Extract base feeds.xml
         run: git show HEAD^1:feeds.xml > "$RUNNER_TEMP/base-feeds.xml"
-      - name: Check feed health
+      - name: Check feed health (report-only)
+        env:
+          MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}  # zizmor: ignore[secrets-outside-env]
+          MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}  # zizmor: ignore[secrets-outside-env]
         run: >-
-          uv run python -m scripts.check_feeds --fail-on-dead
+          uv run python -m scripts.check_feeds
           --base-opml "$RUNNER_TEMP/base-feeds.xml"
