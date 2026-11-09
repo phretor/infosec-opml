@@ -12,8 +12,7 @@ import pytest
 from scripts import check_feeds
 
 RSS = (
-    b"<rss version='2.0'><channel><title>News</title>"
-    b"<item><title>A</title></item></channel></rss>"
+    b"<rss version='2.0'><channel><title>News</title><item><title>A</title></item></channel></rss>"
 )
 ATOM = (
     b"<feed xmlns='http://www.w3.org/2005/Atom'><title>News</title>"
@@ -26,21 +25,24 @@ def client(handler) -> httpx.Client:
     return httpx.Client(transport=httpx.MockTransport(handler), timeout=check_feeds.TIMEOUT)
 
 
-@pytest.mark.parametrize(("status", "body", "expected"), [
-    (200, RSS, "healthy"),
-    (200, ATOM, "healthy"),
-    (200, b"<rss><channel><title>CAPTCHA security research</title></channel></rss>", "healthy"),
-    (200, b"<root><title>unrelated XML</title></root>", "invalid"),
-    (200, b"<rss><channel>", "invalid"),
-    (200, b"<html><body>Welcome</body></html>", "invalid"),
-    (200, b"<html>Cloudflare ray id 123; CAPTCHA</html>", "blocked-to-this-client"),
-    (404, b"", "gone"),
-    (410, b"", "gone"),
-    (403, b"", "blocked-to-this-client"),
-    (429, b"", "unreachable"),
-    (503, b"", "unreachable"),
-    (401, b"", "unreachable"),
-])
+@pytest.mark.parametrize(
+    ("status", "body", "expected"),
+    [
+        (200, RSS, "healthy"),
+        (200, ATOM, "healthy"),
+        (200, b"<rss><channel><title>CAPTCHA security research</title></channel></rss>", "healthy"),
+        (200, b"<root><title>unrelated XML</title></root>", "invalid"),
+        (200, b"<rss><channel>", "invalid"),
+        (200, b"<html><body>Welcome</body></html>", "invalid"),
+        (200, b"<html>Cloudflare ray id 123; CAPTCHA</html>", "blocked-to-this-client"),
+        (404, b"", "gone"),
+        (410, b"", "gone"),
+        (403, b"", "blocked-to-this-client"),
+        (429, b"", "unreachable"),
+        (503, b"", "unreachable"),
+        (401, b"", "unreachable"),
+    ],
+)
 def test_live_classification(status: int, body: bytes, expected: str) -> None:
     with client(lambda request: httpx.Response(status, content=body)) as http:
         result = check_feeds.probe_feed(URL, http, sleep=lambda _: None)
@@ -51,9 +53,11 @@ def test_live_classification(status: int, body: bytes, expected: str) -> None:
 @pytest.mark.parametrize("error", [httpx.ConnectError, httpx.ReadTimeout])
 def test_network_errors_retry_without_dead_verdict(error: type[httpx.RequestError]) -> None:
     calls = []
+
     def handler(request):
         calls.append(request)
         raise error("connection problem", request=request)
+
     with client(handler) as http:
         result = check_feeds.probe_feed(URL, http, sleep=lambda _: None)
     assert result.verdict == "unreachable" and result.status_code is None
@@ -63,6 +67,7 @@ def test_network_errors_retry_without_dead_verdict(error: type[httpx.RequestErro
 def test_retry_backoff_and_recovery() -> None:
     calls = []
     delays = []
+
     def handler(request):
         calls.append(request)
         if len(calls) == 1:
@@ -70,15 +75,19 @@ def test_retry_backoff_and_recovery() -> None:
         if len(calls) == 2:
             return httpx.Response(502)
         return httpx.Response(200, content=RSS)
+
     with client(handler) as http:
         result = check_feeds.probe_feed(URL, http, sleep=delays.append)
     assert (result.verdict, result.attempts, delays) == ("healthy", 3, [0.3, 0.6])
-    assert all("rss+xml" in request.headers["Accept"] and
-               "infosec-opml" in request.headers["User-Agent"] for request in calls)
+    assert all(
+        "rss+xml" in request.headers["Accept"] and "infosec-opml" in request.headers["User-Agent"]
+        for request in calls
+    )
 
 
 def test_redirect_chain_preserves_final_status_and_url() -> None:
     paths = []
+
     def handler(request):
         paths.append(request.url.path)
         if request.url.path == "/feed":
@@ -86,16 +95,23 @@ def test_redirect_chain_preserves_final_status_and_url() -> None:
         if request.url.path == "/second":
             return httpx.Response(302, headers={"Location": "/final"})
         return httpx.Response(200, content=ATOM)
+
     with client(handler) as http:
         result = check_feeds.probe_feed(URL, http)
     assert (result.verdict, result.status_code, result.final_url, result.attempts) == (
-        "healthy", 200, "https://example.test/final", 1)
+        "healthy",
+        200,
+        "https://example.test/final",
+        1,
+    )
     assert paths == ["/feed", "/second", "/final"]
 
 
 def test_bounded_body_and_independent_failures() -> None:
-    feeds = [check_feeds.FeedRow("bad", "not-a-url", "a"),
-             check_feeds.FeedRow("oversize", URL, "b")]
+    feeds = [
+        check_feeds.FeedRow("bad", "not-a-url", "a"),
+        check_feeds.FeedRow("oversize", URL, "b"),
+    ]
     with client(
         lambda request: httpx.Response(200, content=RSS + b"x" * check_feeds.MAX_BODY)
     ) as http:
@@ -110,6 +126,7 @@ def test_worker_limit_and_duplicate_url_only_probed_once() -> None:
     peak = 0
     count = 0
     lock = threading.Lock()
+
     def handler(request):
         nonlocal active, peak, count
         with lock:
@@ -120,6 +137,7 @@ def test_worker_limit_and_duplicate_url_only_probed_once() -> None:
         with lock:
             active -= 1
         return httpx.Response(200, content=RSS)
+
     feeds = [check_feeds.FeedRow(str(n), f"https://example.test/{n}", "a") for n in range(16)]
     feeds.append(feeds[0])
     with client(handler) as http:
@@ -133,17 +151,24 @@ def test_main_uses_probe_not_sticky_miniflux_and_only_live_gone_fails(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     source = tmp_path / "feeds.xml"
-    source.write_text("<opml><body><outline text='a'><outline text='good' type='rss' "
-                      "xmlUrl='https://example.test/feed'/></outline></body></opml>")
+    source.write_text(
+        "<opml><body><outline text='a'><outline text='good' type='rss' "
+        "xmlUrl='https://example.test/feed'/></outline></body></opml>"
+    )
     base = tmp_path / "base.xml"
     base.write_text("<opml><body/></opml>")
     monkeypatch.setattr(check_feeds, "FEEDS_XML", source)
     monkeypatch.setenv("MINIFLUX_URL", "https://mf.test")
     monkeypatch.setenv("MINIFLUX_TOKEN", "secret")
-    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *args: {
-        URL: check_feeds.MinifluxStatus(True, 99, "404 from Miniflux")})
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--base-opml", str(base),
-                                    "--min-error-count", "2"])
+    monkeypatch.setattr(
+        check_feeds,
+        "fetch_miniflux_feeds",
+        lambda *args: {URL: check_feeds.MinifluxStatus(True, 99, "404 from Miniflux")},
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        ["check_feeds", "--fail-on-dead", "--base-opml", str(base), "--min-error-count", "2"],
+    )
     real_probe = check_feeds.probe_feeds
     with client(lambda request: httpx.Response(200, content=RSS)) as http:
         monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))
@@ -158,25 +183,8 @@ def test_main_uses_probe_not_sticky_miniflux_and_only_live_gone_fails(
 
 
 def test_miniflux_unavailable_does_not_skip_probes(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
-) -> None:
-    source = tmp_path / "feeds.xml"
-    source.write_text("<opml><body><outline text='a'><outline type='rss' "
-                      "xmlUrl='https://example.test/feed'/></outline></body></opml>")
-    monkeypatch.setattr(check_feeds, "FEEDS_XML", source)
-    monkeypatch.setenv("MINIFLUX_URL", "https://mf.test")
-    monkeypatch.setenv("MINIFLUX_TOKEN", "secret")
-    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *args: (_ for _ in ()).throw(
-        httpx.ConnectError("offline")))
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
-    real_probe = check_feeds.probe_feeds
-    with client(lambda request: httpx.Response(200, content=RSS)) as http:
-        monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))
-        assert check_feeds.main() is None
-
-
-def test_min_error_count_filters_history_without_changing_live_verdict(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     source = tmp_path / "feeds.xml"
     source.write_text(
@@ -186,9 +194,38 @@ def test_min_error_count_filters_history_without_changing_live_verdict(
     monkeypatch.setattr(check_feeds, "FEEDS_XML", source)
     monkeypatch.setenv("MINIFLUX_URL", "https://mf.test")
     monkeypatch.setenv("MINIFLUX_TOKEN", "secret")
-    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *args: {
-        URL: check_feeds.MinifluxStatus(False, 2, "old failure"),
-    })
+    monkeypatch.setattr(
+        check_feeds,
+        "fetch_miniflux_feeds",
+        lambda *args: (_ for _ in ()).throw(httpx.ConnectError("offline")),
+    )
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+    real_probe = check_feeds.probe_feeds
+    with client(lambda request: httpx.Response(200, content=RSS)) as http:
+        monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))
+        assert check_feeds.main() is None
+
+
+def test_min_error_count_filters_history_without_changing_live_verdict(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    source = tmp_path / "feeds.xml"
+    source.write_text(
+        "<opml><body><outline text='a'><outline type='rss' "
+        "xmlUrl='https://example.test/feed'/></outline></body></opml>"
+    )
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", source)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.test")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "secret")
+    monkeypatch.setattr(
+        check_feeds,
+        "fetch_miniflux_feeds",
+        lambda *args: {
+            URL: check_feeds.MinifluxStatus(False, 2, "old failure"),
+        },
+    )
     real_probe = check_feeds.probe_feeds
     with client(lambda request: httpx.Response(200, content=b"<html>not feed</html>")) as http:
         monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))

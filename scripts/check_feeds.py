@@ -102,9 +102,11 @@ def _feed_xml(body: bytes) -> bool:
     name = root.tag.rsplit("}", 1)[-1].lower()
     children = {child.tag.rsplit("}", 1)[-1].lower() for child in root}
     if name == "rss":
-        return any(child.tag.rsplit("}", 1)[-1].lower() == "channel" and
-                   any(item.tag.rsplit("}", 1)[-1].lower() in {"title", "item"} for item in child)
-                   for child in root)
+        return any(
+            child.tag.rsplit("}", 1)[-1].lower() == "channel"
+            and any(item.tag.rsplit("}", 1)[-1].lower() in {"title", "item"} for item in child)
+            for child in root
+        )
     if name in {"feed", "rdf"}:
         return bool(children & ({"title", "entry"} if name == "feed" else {"channel", "item"}))
     return False
@@ -112,11 +114,19 @@ def _feed_xml(body: bytes) -> bool:
 
 def _challenge(body: bytes) -> bool:
     text = body[:65536].lower()
-    return any(marker in text for marker in (
-        b"cf-chl-", b"cloudflare ray id", b"checking your browser",
-        b"verify you are human", b"captcha", b"javascript challenge",
-        b"enable javascript to continue", b"just a moment...",
-    ))
+    return any(
+        marker in text
+        for marker in (
+            b"cf-chl-",
+            b"cloudflare ray id",
+            b"checking your browser",
+            b"verify you are human",
+            b"captcha",
+            b"javascript challenge",
+            b"enable javascript to continue",
+            b"just a moment...",
+        )
+    )
 
 
 def probe_feed(url: str, client: httpx.Client, sleep=time.sleep) -> Probe:
@@ -147,14 +157,19 @@ def probe_feed(url: str, client: httpx.Client, sleep=time.sleep) -> Probe:
                 if 200 <= status < 300:
                     if len(body) > MAX_BODY:
                         return Probe(
-                            "unreachable", status, final, "body exceeds 8 MiB cap", attempt,
+                            "unreachable",
+                            status,
+                            final,
+                            "body exceeds 8 MiB cap",
+                            attempt,
                         )
                     if _feed_xml(body):
                         return Probe("healthy", status, final, attempts=attempt)
                     challenge = _challenge(body)
                     return Probe(
                         "blocked-to-this-client" if challenge else "invalid",
-                        status, final,
+                        status,
+                        final,
                         "challenge page" if challenge else "not a parseable RSS/Atom feed",
                         attempt,
                     )
@@ -173,13 +188,15 @@ def probe_feed(url: str, client: httpx.Client, sleep=time.sleep) -> Probe:
     raise AssertionError("attempt budget exhausted")
 
 
-def probe_feeds(feeds: list[FeedRow], client: httpx.Client | None = None,
-                workers: int = WORKERS) -> dict[str, Probe]:
+def probe_feeds(
+    feeds: list[FeedRow], client: httpx.Client | None = None, workers: int = WORKERS
+) -> dict[str, Probe]:
     """One shared thread-safe client, bounded workers, one probe per distinct URL."""
     urls = list(dict.fromkeys(feed.xml_url for feed in feeds))
     if client is None:
-        with httpx.Client(timeout=TIMEOUT, limits=httpx.Limits(max_connections=workers),
-                          follow_redirects=True) as owned:
+        with httpx.Client(
+            timeout=TIMEOUT, limits=httpx.Limits(max_connections=workers), follow_redirects=True
+        ) as owned:
             return probe_feeds(feeds, owned, workers)
 
     def safe_probe(url: str) -> Probe:
@@ -195,11 +212,17 @@ def probe_feeds(feeds: list[FeedRow], client: httpx.Client | None = None,
 def main() -> None:
     parser = argparse.ArgumentParser(description="Probe RSS/Atom feed URLs from this client")
     parser.add_argument(
-        "--fail-on-dead", action="store_true", help="Fail on live HTTP 404/410 only",
+        "--fail-on-dead",
+        action="store_true",
+        help="Fail on live HTTP 404/410 only",
     )
     parser.add_argument("--base-opml", type=Path, help="Mark feeds new relative to the PR base")
-    parser.add_argument("--min-error-count", type=int, default=DEFAULT_MIN_ERROR_COUNT,
-                        help="Show optional Miniflux warnings at or above this count (default: 3)")
+    parser.add_argument(
+        "--min-error-count",
+        type=int,
+        default=DEFAULT_MIN_ERROR_COUNT,
+        help="Show optional Miniflux warnings at or above this count (default: 3)",
+    )
     args = parser.parse_args()
     if args.min_error_count < 1:
         parser.error("--min-error-count must be positive")
@@ -211,13 +234,15 @@ def main() -> None:
     miniflux: dict[str, MinifluxStatus] = {}
     if os.environ.get("MINIFLUX_URL") and os.environ.get("MINIFLUX_TOKEN"):
         try:
-            miniflux = fetch_miniflux_feeds(os.environ["MINIFLUX_URL"],
-                                             os.environ["MINIFLUX_TOKEN"])
+            miniflux = fetch_miniflux_feeds(
+                os.environ["MINIFLUX_URL"], os.environ["MINIFLUX_TOKEN"]
+            )
         except (httpx.HTTPError, ValueError, KeyError) as exc:
             print(f"Miniflux diagnostics unavailable: {exc}", file=sys.stderr)
     probes = probe_feeds(feeds)
-    buckets: dict[Verdict, list[FeedRow]] = {key: [] for key in
-        ("healthy", "gone", "blocked-to-this-client", "unreachable", "invalid")}
+    buckets: dict[Verdict, list[FeedRow]] = {
+        key: [] for key in ("healthy", "gone", "blocked-to-this-client", "unreachable", "invalid")
+    }
     for feed in feeds:
         buckets[probes[feed.xml_url].verdict].append(feed)
     print(f"Feeds: {len(feeds)} in feeds.xml; {len(miniflux)} Miniflux diagnostics")
@@ -229,17 +254,21 @@ def main() -> None:
         for feed in sorted(rows, key=lambda item: (item.folder, item.name)):
             result = probes[feed.xml_url]
             status = result.status_code if result.status_code is not None else "no response"
-            print(f"  [{verdict}] {feed.xml_url} | HTTP {status} | final: {result.final_url}"
-                  f" | attempts: {result.attempts} | {feed.name} ({feed.folder})")
+            print(
+                f"  [{verdict}] {feed.xml_url} | HTTP {status} | final: {result.final_url}"
+                f" | attempts: {result.attempts} | {feed.name} ({feed.folder})"
+            )
             if result.detail:
                 print(f"    Evidence: {result.detail}")
             previous = miniflux.get(feed.xml_url)
             if previous and (
                 previous.parsing_error_count >= args.min_error_count or previous.disabled
             ):
-                print(f"    Miniflux history: {previous.parsing_error_count} errors"
-                      f"{' (disabled)' if previous.disabled else ''}; "
-                      f"{previous.parsing_error_message[:120]}")
+                print(
+                    f"    Miniflux history: {previous.parsing_error_count} errors"
+                    f"{' (disabled)' if previous.disabled else ''}; "
+                    f"{previous.parsing_error_message[:120]}"
+                )
             if feed.xml_url in new_urls:
                 print("    New in PR base comparison")
     if args.fail_on_dead and buckets["gone"]:
