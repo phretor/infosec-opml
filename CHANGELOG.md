@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-09
+
+### Changed
+- Feed health probes URLs with bounded retries and validates RSS/Atom responses,
+  including Brotli and feeds up to 16 MiB. Runner results are client-specific
+  supplementary evidence; both CI checks are report-only. The authoritative
+  in-cluster view requires an explicit Miniflux refresh and subsequent read;
+  stale counters and unavailable refreshes never produce a verdict.
+
 ## 2026-11-01
 
 ### Added

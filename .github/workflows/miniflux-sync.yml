@@ -144,6 +144,8 @@ jobs:
     needs: sync
     # Explicit: the implicit success() would also see the skipped push job on schedule runs.
     if: ${{ !cancelled() && needs.sync.result == 'success' }}
+    # Independent report-only job: even a confirmed 404 is for human follow-up.
+    timeout-minutes: 25
     runs-on: ubuntu-latest
     permissions:
       contents: read   # checkout only
@@ -163,9 +165,8 @@ jobs:
       - name: Install project
         run: uv sync --extra dev
 
-      - name: Check feed health
+      - name: Check feed health (report-only)
         env:
-          # Same policy as the sync job above.
           MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}  # zizmor: ignore[secrets-outside-env]
           MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}  # zizmor: ignore[secrets-outside-env]
-        run: uv run python -m scripts.check_feeds --fail-on-dead
+        run: uv run python -m scripts.check_feeds

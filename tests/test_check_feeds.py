@@ -1,344 +1,438 @@
-"""Tests for the Miniflux-API-driven feed health classifier."""
+"""Live feed-probe behavior from synthetic HTTP responses."""
 
 from __future__ import annotations
 
-import json
+import threading
+import time
 from pathlib import Path
 
+import brotli
 import httpx
 import pytest
 
 from scripts import check_feeds
-from scripts.check_feeds import MinifluxStatus
+
+RSS = (
+    b"<rss version='2.0'><channel><title>News</title><item><title>A</title></item></channel></rss>"
+)
+ATOM = (
+    b"<feed xmlns='http://www.w3.org/2005/Atom'><title>News</title>"
+    b"<entry><title>A</title></entry></feed>"
+)
+URL = "https://example.test/feed"
 
 
-def _status(disabled: bool = False, count: int = 0, msg: str = "") -> MinifluxStatus:
-    return MinifluxStatus(disabled=disabled, parsing_error_count=count, parsing_error_message=msg)
-
-
-def _mock_client(feeds_payload: list[dict]) -> httpx.Client:
-    """Return an httpx.Client whose /v1/feeds returns the given payload."""
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/v1/feeds"
-        assert request.headers.get("X-Auth-Token") == "test-token"
-        return httpx.Response(200, content=json.dumps(feeds_payload))
-
-    return httpx.Client(transport=httpx.MockTransport(handler))
-
-
-def test_classify_ok() -> None:
-    assert check_feeds.classify(_status(), min_error_count=3) == "ok"
-
-
-def test_classify_transient_below_threshold() -> None:
-    assert check_feeds.classify(_status(count=2, msg="boom"), min_error_count=3) == "transient"
-
-
-def test_classify_dead_at_threshold() -> None:
-    assert check_feeds.classify(_status(count=3, msg="boom"), min_error_count=3) == "dead"
-
-
-def test_classify_dead_when_disabled_regardless_of_count() -> None:
-    assert check_feeds.classify(_status(disabled=True), min_error_count=3) == "dead"
-
-
-def test_classify_dead_when_missing_from_miniflux() -> None:
-    assert check_feeds.classify(None, min_error_count=3) == "dead"
-
-
-def test_fetch_miniflux_feeds_builds_map() -> None:
-    client = _mock_client(
-        [
-            {
-                "feed_url": "https://a.example/feed",
-                "disabled": False,
-                "parsing_error_count": 0,
-                "parsing_error_message": "",
-            },
-            {
-                "feed_url": "https://b.example/feed",
-                "disabled": True,
-                "parsing_error_count": 5,
-                "parsing_error_message": "gone",
-            },
-        ]
-    )
-    result = check_feeds.fetch_miniflux_feeds("https://mf.example", "test-token", client=client)
-    assert set(result) == {"https://a.example/feed", "https://b.example/feed"}
-    assert result["https://b.example/feed"].disabled is True
-    assert result["https://b.example/feed"].parsing_error_count == 5
-
-
-def _write_feeds_xml(path: Path, urls_with_folders: list[tuple[str, str, str]]) -> None:
-    """Write a minimal feeds.xml with [(name, xmlUrl, folder), ...]."""
-    folders: dict[str, list[tuple[str, str]]] = {}
-    for name, url, folder in urls_with_folders:
-        folders.setdefault(folder, []).append((name, url))
-    body_parts = ['<?xml version="1.0" encoding="UTF-8"?>', '<opml version="1.0">']
-    body_parts.append("  <head><title>t</title></head>")
-    body_parts.append("  <body>")
-    for folder, feeds in folders.items():
-        body_parts.append(f'    <outline text="{folder}">')
-        for name, url in feeds:
-            body_parts.append(
-                f'      <outline text="{name}" type="rss" xmlUrl="{url}" htmlUrl="{url}"></outline>'
-            )
-        body_parts.append("    </outline>")
-    body_parts.append("  </body>")
-    body_parts.append("</opml>")
-    path.write_text("\n".join(body_parts) + "\n", encoding="utf-8")
-
-
-_TEST_URL = "https://x.example/feed"
+def client(handler) -> httpx.Client:
+    return httpx.Client(transport=httpx.MockTransport(handler), timeout=check_feeds.TIMEOUT)
 
 
 @pytest.mark.parametrize(
-    ("miniflux_payload", "expected_exit"),
+    ("status", "body", "expected"),
     [
-        pytest.param({_TEST_URL: _status(disabled=True)}, 1, id="disabled"),
-        pytest.param({_TEST_URL: _status(count=5, msg="404")}, 1, id="over-threshold"),
-        pytest.param({}, 1, id="missing-from-miniflux"),
-        pytest.param({_TEST_URL: _status()}, None, id="ok"),
-        pytest.param({_TEST_URL: _status(count=1, msg="single blip")}, None, id="transient"),
-        pytest.param(
-            {
-                _TEST_URL: _status(
-                    count=5,
-                    msg="Miniflux is not able to reach this website due to a network "
-                    "error: dial tcp: i/o timeout.",
-                )
-            },
-            None,
-            id="over-threshold-unreachable",
-        ),
+        (200, RSS, "healthy"),
+        (200, ATOM, "healthy"),
+        (200, b"<rss><channel><title>CAPTCHA security research</title></channel></rss>", "healthy"),
+        (200, b"<root><title>unrelated XML</title></root>", "invalid"),
+        (200, b"<rss><channel>", "invalid"),
+        (200, b"<html><body>Welcome</body></html>", "invalid"),
+        (200, b"<html>Cloudflare ray id 123; CAPTCHA</html>", "blocked-to-this-client"),
+        (404, b"", "gone"),
+        (410, b"", "gone"),
+        (403, b"", "blocked-to-this-client"),
+        (429, b"", "unreachable"),
+        (503, b"", "unreachable"),
+        (401, b"", "unreachable"),
     ],
 )
-def test_fail_on_dead_exit_matrix(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    miniflux_payload: dict[str, MinifluxStatus],
-    expected_exit: int | None,
-) -> None:
-    feeds_xml = tmp_path / "feeds.xml"
-    _write_feeds_xml(feeds_xml, [("Feed", _TEST_URL, "01 Test")])
-    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
-    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
-    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
-    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *a, **k: miniflux_payload)
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--min-error-count", "3"])
+def test_live_classification(status: int, body: bytes, expected: str) -> None:
+    with client(lambda request: httpx.Response(status, content=body)) as http:
+        result = check_feeds.probe_feed(URL, http, sleep=lambda _: None)
+    assert (result.verdict, result.status_code, result.final_url) == (expected, status, URL)
+    assert result.attempts == (3 if status in {429, 503} else 1)
 
-    if expected_exit is None:
+
+def test_brotli_feed_is_decompressed_before_xml_validation() -> None:
+    with client(
+        lambda request: httpx.Response(
+            200,
+            content=brotli.compress(RSS),
+            headers={"Content-Encoding": "br", "Content-Type": "application/rss+xml"},
+        )
+    ) as http:
+        result = check_feeds.probe_feed(URL, http)
+    assert result.verdict == "healthy"
+
+
+def test_invalid_response_preserves_diagnostic_headers_and_sample() -> None:
+    body = b"<html><body>not a feed</body></html>"
+    with client(
+        lambda request: httpx.Response(
+            200,
+            content=body,
+            headers={"Content-Type": "text/html; charset=utf-8"},
+        )
+    ) as http:
+        result = check_feeds.probe_feed(URL, http)
+    assert result.verdict == "invalid" and result.detail == "HTML document"
+    assert result.content_type == "text/html; charset=utf-8"
+    assert result.charset == "utf-8" and result.sample == repr(body)
+
+
+@pytest.mark.parametrize("error", [httpx.ConnectError, httpx.ReadTimeout])
+def test_network_errors_retry_without_dead_verdict(error: type[httpx.RequestError]) -> None:
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        raise error("connection problem", request=request)
+
+    with client(handler) as http:
+        result = check_feeds.probe_feed(URL, http, sleep=lambda _: None)
+    assert result.verdict == "unreachable" and result.status_code is None
+    assert result.attempts == len(calls) == 3
+
+
+def test_retry_backoff_and_recovery() -> None:
+    calls = []
+    delays = []
+
+    def handler(request):
+        calls.append(request)
+        if len(calls) == 1:
+            return httpx.Response(429)
+        if len(calls) == 2:
+            return httpx.Response(502)
+        return httpx.Response(200, content=RSS)
+
+    with client(handler) as http:
+        result = check_feeds.probe_feed(URL, http, sleep=delays.append)
+    assert (result.verdict, result.attempts, delays) == ("healthy", 3, [0.3, 0.6])
+    assert all(
+        "rss+xml" in request.headers["Accept"] and "infosec-opml" in request.headers["User-Agent"]
+        for request in calls
+    )
+
+
+def test_redirect_chain_preserves_final_status_and_url() -> None:
+    paths = []
+
+    def handler(request):
+        paths.append(request.url.path)
+        if request.url.path == "/feed":
+            return httpx.Response(301, headers={"Location": "/second"})
+        if request.url.path == "/second":
+            return httpx.Response(302, headers={"Location": "/final"})
+        return httpx.Response(200, content=ATOM)
+
+    with client(handler) as http:
+        result = check_feeds.probe_feed(URL, http)
+    assert (result.verdict, result.status_code, result.final_url, result.attempts) == (
+        "healthy",
+        200,
+        "https://example.test/final",
+        1,
+    )
+    assert paths == ["/feed", "/second", "/final"]
+
+
+def test_bounded_body_and_independent_failures() -> None:
+    feeds = [
+        check_feeds.FeedRow("bad", "not-a-url", "a"),
+        check_feeds.FeedRow("oversize", URL, "b"),
+    ]
+    with client(
+        lambda request: httpx.Response(200, content=RSS + b"x" * check_feeds.MAX_BODY)
+    ) as http:
+        result = check_feeds.probe_feeds(feeds, http, workers=2)
+    assert result["not-a-url"].verdict == "invalid"
+    assert result[URL].verdict == "unreachable"
+    assert result[URL].detail == "body exceeds 16 MiB cap"
+
+
+def test_large_valid_feed_below_sixteen_mib_is_healthy() -> None:
+    body = (
+        b"<rss><channel><title>News</title><item><description>"
+        + (b"X" * (9 * 1024 * 1024))
+        + b"</description></item></channel></rss>"
+    )
+    with client(lambda request: httpx.Response(200, content=body)) as http:
+        result = check_feeds.probe_feed(URL, http)
+    assert result.verdict == "healthy"
+
+
+def test_worker_limit_and_duplicate_url_only_probed_once() -> None:
+    active = 0
+    peak = 0
+    count = 0
+    lock = threading.Lock()
+
+    def handler(request):
+        nonlocal active, peak, count
+        with lock:
+            active += 1
+            count += 1
+            peak = max(active, peak)
+        time.sleep(0.012)
+        with lock:
+            active -= 1
+        return httpx.Response(200, content=RSS)
+
+    feeds = [check_feeds.FeedRow(str(n), f"https://example.test/{n}", "a") for n in range(16)]
+    feeds.append(feeds[0])
+    with client(handler) as http:
+        results = check_feeds.probe_feeds(feeds, http, workers=3)
+    assert len(results) == count == 16
+    assert 1 < peak <= 3
+    assert all(result.verdict == "healthy" for result in results.values())
+
+
+def test_main_uses_probe_not_sticky_miniflux_and_only_live_gone_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    source = tmp_path / "feeds.xml"
+    source.write_text(
+        "<opml><body><outline text='a'><outline text='good' type='rss' "
+        "xmlUrl='https://example.test/feed'/></outline></body></opml>"
+    )
+    base = tmp_path / "base.xml"
+    base.write_text("<opml><body/></opml>")
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", source)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.test")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "secret")
+    monkeypatch.setattr(
+        check_feeds,
+        "refresh_miniflux_feeds",
+        lambda *args: ({}, {}, {URL: check_feeds.MinifluxStatus(True, 99, "404 from Miniflux")}),
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        ["check_feeds", "--fail-on-dead", "--base-opml", str(base), "--min-error-count", "2"],
+    )
+    real_probe = check_feeds.probe_feeds
+    with client(lambda request: httpx.Response(200, content=RSS)) as http:
+        monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))
         assert check_feeds.main() is None
-    else:
+    assert "1 healthy, 0 gone" in capsys.readouterr().out
+    with client(lambda request: httpx.Response(410)) as http:
+        monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))
         with pytest.raises(SystemExit) as exc:
             check_feeds.main()
-        assert exc.value.code == expected_exit
+    assert exc.value.code == 1
+    assert "New in PR base comparison" in capsys.readouterr().out
 
 
-def test_main_errors_without_credentials(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    feeds_xml = tmp_path / "feeds.xml"
-    _write_feeds_xml(feeds_xml, [("x", "https://x.example/feed", "f")])
-    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
-    monkeypatch.delenv("MINIFLUX_URL", raising=False)
-    monkeypatch.delenv("MINIFLUX_TOKEN", raising=False)
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
-
-    with pytest.raises(SystemExit) as exc:
-        check_feeds.main()
-    assert exc.value.code == 2
-
-
-# Real Miniflux en_US parsing_error_message strings (see is_transient_unreachable).
-_NETWORK_ERR = (
-    "Miniflux is not able to reach this website due to a network error: "
-    'Get "https://x.example/feed": dial tcp: lookup x.example: no such host.'
-)
-_TIMEOUT_ERR = "This website is too slow and the request timed out: context deadline exceeded"
-_TOO_MANY = (
-    "Miniflux generated too many requests to this website. Please, try again later "
-    "or change the application configuration."
-)
-_BAD_GATEWAY = (
-    "The website is not available at the moment due to a bad gateway error. "
-    "The problem is not on Miniflux side. Please, try again later."
-)
-_SERVER_ERR = (
-    "The website is not available at the moment due to a server error. "
-    "The problem is not on Miniflux side. Please, try again later."
-)
-
-
-def _unexpected_status(code: int) -> str:
-    return (
-        "The website is not available at the moment due to an unexpected HTTP status "
-        f"code: {code}. The problem is not on Miniflux side. Please, try again later."
+def test_miniflux_unavailable_does_not_skip_probes(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "feeds.xml"
+    source.write_text(
+        "<opml><body><outline text='a'><outline type='rss' "
+        "xmlUrl='https://example.test/feed'/></outline></body></opml>"
     )
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", source)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.test")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "secret")
+    monkeypatch.setattr(
+        check_feeds,
+        "refresh_miniflux_feeds",
+        lambda *args: (_ for _ in ()).throw(httpx.ConnectError("offline")),
+    )
+    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
+    real_probe = check_feeds.probe_feeds
+    with client(lambda request: httpx.Response(200, content=RSS)) as http:
+        monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))
+        assert check_feeds.main() is None
 
 
-@pytest.mark.parametrize(
-    ("message", "expected"),
-    [
-        pytest.param(_NETWORK_ERR, "unreachable", id="network-dns"),
-        pytest.param(_TIMEOUT_ERR, "unreachable", id="timeout"),
-        pytest.param(_TOO_MANY, "unreachable", id="429"),
-        pytest.param(_BAD_GATEWAY, "unreachable", id="502"),
-        pytest.param(_SERVER_ERR, "unreachable", id="500"),
-        pytest.param(_unexpected_status(522), "unreachable", id="522"),
-        pytest.param(_unexpected_status(410), "dead", id="410-unexpected-status"),
-        pytest.param(
-            "The requested resource is not found. Please, verify the URL.",
-            "dead",
-            id="404",
-        ),
-        pytest.param(
-            "Access to this website is forbidden. Perhaps, this website has a bot "
-            "protection mechanism?",
-            "dead",
-            id="403",
-        ),
-        pytest.param("This feed already exists.", "dead", id="already-exists"),
-        pytest.param("Unable to detect feed format: EOF.", "dead", id="parse-error"),
-    ],
-)
-def test_classify_over_threshold_by_message(message: str, expected: str) -> None:
-    assert check_feeds.classify(_status(count=3, msg=message), min_error_count=3) == expected
-
-
-_BOT_FORBIDDEN = (
-    "Access to this website is forbidden. Perhaps, this website has a bot protection mechanism?"
-)
-
-
-@pytest.mark.parametrize(
-    ("url", "message"),
-    [
-        ("https://blog.qualys.com/feed", "Cloudflare CAPTCHA challenge"),
-        ("https://rafa.hashnode.dev/rss.xml", "Cloudflare JS challenge"),
-        ("https://aviii.hashnode.dev/rss.xml", "Cloudflare bot challenge"),
-        (
-            "https://blog.mozilla.org/security/feed/",
-            _BOT_FORBIDDEN,
-        ),
-        ("https://www.digitaljournal.com/feed", _unexpected_status(403)),
-    ],
-)
-def test_verified_bot_blocked_feeds_do_not_fail_health_gate(
+def test_min_error_count_filters_history_without_changing_live_verdict(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
-    url: str,
-    message: str,
 ) -> None:
-    feeds_xml = tmp_path / "feeds.xml"
-    _write_feeds_xml(feeds_xml, [("Protected", url, "01 Test")])
-    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
-    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
-    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
+    source = tmp_path / "feeds.xml"
+    source.write_text(
+        "<opml><body><outline text='a'><outline type='rss' "
+        "xmlUrl='https://example.test/feed'/></outline></body></opml>"
+    )
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", source)
+    monkeypatch.setenv("MINIFLUX_URL", "https://mf.test")
+    monkeypatch.setenv("MINIFLUX_TOKEN", "secret")
     monkeypatch.setattr(
-        check_feeds, "fetch_miniflux_feeds", lambda *a, **k: {url: _status(count=3, msg=message)}
+        check_feeds,
+        "refresh_miniflux_feeds",
+        lambda *args: ({}, {}, {URL: check_feeds.MinifluxStatus(False, 2, "old failure")}),
     )
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
-    assert check_feeds.main() is None
-    report = capsys.readouterr().out
-    assert "BOT-BLOCKED EXCEPTIONS" in report
-    assert url in report
-    assert "0 dead" in report
-
-
-@pytest.mark.parametrize(
-    ("url", "message", "disabled"),
-    [
-        ("https://unknown.example/feed", "Cloudflare CAPTCHA challenge", False),
-        ("https://blog.qualys.com/feed", "The requested resource is not found.", False),
-        ("https://blog.qualys.com/feed", _unexpected_status(404), False),
-        ("https://blog.qualys.com/feed", "Cloudflare CAPTCHA challenge", True),
-    ],
-)
-def test_bot_exemption_does_not_hide_other_failures(url: str, message: str, disabled: bool) -> None:
-    assert check_feeds.classify(_status(disabled=disabled, count=3, msg=message), 3, url) == "dead"
-
-
-def test_classify_disabled_stays_dead_even_when_unreachable() -> None:
-    status = _status(disabled=True, count=5, msg=_NETWORK_ERR)
-    assert check_feeds.classify(status, min_error_count=3) == "dead"
-
-
-def _main_with_fetch(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, fetch) -> None:
-    feeds_xml = tmp_path / "feeds.xml"
-    _write_feeds_xml(feeds_xml, [("Feed", _TEST_URL, "01 Test")])
-    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
-    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
-    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
-    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", fetch)
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
-    return check_feeds.main()
-
-
-def _raising_fetch(exc: Exception):
-    def fetch(*_a, **_k):
-        raise exc
-
-    return fetch
-
-
-def _status_error(code: int) -> httpx.HTTPStatusError:
-    request = httpx.Request("GET", "https://mf.example/v1/feeds")
-    return httpx.HTTPStatusError(
-        "boom", request=request, response=httpx.Response(code, request=request)
-    )
-
-
-@pytest.mark.parametrize(
-    "exc",
-    [
-        pytest.param(httpx.ConnectError("refused"), id="connect-error"),
-        pytest.param(httpx.ReadTimeout("slow"), id="timeout"),
-        pytest.param(_status_error(503), id="503"),
-        pytest.param(_status_error(429), id="429"),
-    ],
-)
-def test_transient_miniflux_api_failure_does_not_fail(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, exc: Exception
-) -> None:
-    assert _main_with_fetch(monkeypatch, tmp_path, _raising_fetch(exc)) is None
-
-
-def test_miniflux_auth_failure_still_fails(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    with pytest.raises(httpx.HTTPStatusError):
-        _main_with_fetch(monkeypatch, tmp_path, _raising_fetch(_status_error(401)))
-
-
-_BASE_URL = "https://old.example/feed"
-_NEW_URL = "https://new.example/feed"
-
-
-@pytest.mark.parametrize(
-    ("miniflux_payload", "expected_exit"),
-    [
-        pytest.param({_BASE_URL: _status()}, None, id="new-feed-missing-is-pending"),
-        pytest.param({_NEW_URL: _status()}, 1, id="base-feed-missing-stays-dead"),
-    ],
-)
-def test_base_opml_marks_new_feeds_missing_from_miniflux_pending(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path: Path,
-    miniflux_payload: dict[str, MinifluxStatus],
-    expected_exit: int | None,
-) -> None:
-    base_xml = tmp_path / "base.xml"
-    _write_feeds_xml(base_xml, [("Old", _BASE_URL, "01 Test")])
-    feeds_xml = tmp_path / "feeds.xml"
-    _write_feeds_xml(feeds_xml, [("Old", _BASE_URL, "01 Test"), ("New", _NEW_URL, "01 Test")])
-    monkeypatch.setattr(check_feeds, "FEEDS_XML", feeds_xml)
-    monkeypatch.setenv("MINIFLUX_URL", "https://mf.example")
-    monkeypatch.setenv("MINIFLUX_TOKEN", "test-token")
-    monkeypatch.setattr(check_feeds, "fetch_miniflux_feeds", lambda *a, **k: miniflux_payload)
-    monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--base-opml", str(base_xml)])
-
-    if expected_exit is None:
+    real_probe = check_feeds.probe_feeds
+    with client(lambda request: httpx.Response(200, content=b"<html>not feed</html>")) as http:
+        monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))
+        monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead"])
         assert check_feeds.main() is None
-    else:
-        with pytest.raises(SystemExit) as exc:
-            check_feeds.main()
-        assert exc.value.code == expected_exit
+        assert "Miniflux history:" not in capsys.readouterr().out
+        monkeypatch.setattr("sys.argv", ["check_feeds", "--fail-on-dead", "--min-error-count", "2"])
+        assert check_feeds.main() is None
+        report = capsys.readouterr().out
+        assert "Miniflux history: 2 errors" in report
+        assert "0 gone" in report
+
+
+def test_ci_style_invocation_never_fails_on_feed_404(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    source = tmp_path / "feeds.xml"
+    source.write_text(
+        "<opml><body><outline text='a'><outline type='rss' "
+        "xmlUrl='https://example.test/feed'/></outline></body></opml>"
+    )
+    monkeypatch.setattr(check_feeds, "FEEDS_XML", source)
+    monkeypatch.delenv("MINIFLUX_URL", raising=False)
+    monkeypatch.delenv("MINIFLUX_TOKEN", raising=False)
+    monkeypatch.setattr("sys.argv", ["check_feeds"])
+    real_probe = check_feeds.probe_feeds
+    with client(lambda request: httpx.Response(404)) as http:
+        monkeypatch.setattr(check_feeds, "probe_feeds", lambda feeds: real_probe(feeds, http))
+        assert check_feeds.main() is None
+    report = capsys.readouterr()
+    assert "1 gone" in report.out
+    assert "no authoritative verdict" in report.out
+
+
+def test_miniflux_refresh_replaces_sticky_error_with_fresh_cluster_result() -> None:
+    calls: list[tuple[str, str]] = []
+    reads = 0
+    feed = check_feeds.FeedRow("Feed", URL, "a")
+    other = check_feeds.FeedRow("Other", "https://example.test/other", "a")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal reads
+        calls.append((request.method, request.url.path))
+        assert request.headers["X-Auth-Token"] == "token"
+        if request.method == "PUT":
+            assert request.url.path == "/v1/feeds/42/refresh"
+            return httpx.Response(204)
+        reads += 1
+        return httpx.Response(
+            200,
+            json=[
+                {
+                    "id": 42,
+                    "feed_url": URL,
+                    "checked_at": f"check-{reads}",
+                    "parsing_error_count": 9 if reads == 1 else 0,
+                    "parsing_error_message": "HTTP 404" if reads == 1 else "",
+                },
+                {
+                    "id": 43,
+                    "feed_url": other.xml_url,
+                    "checked_at": "old",
+                    "parsing_error_count": 0,
+                    "parsing_error_message": "",
+                },
+            ],
+        )
+
+    with client(handler) as http:
+        fresh, failures, before = check_feeds.refresh_miniflux_feeds(
+            [feed, other],
+            {
+                URL: check_feeds.Probe("blocked-to-this-client", 403, URL),
+                other.xml_url: check_feeds.Probe("healthy", 200, other.xml_url),
+            },
+            "https://mf.test",
+            "token",
+            client=http,
+            sleep=lambda _: None,
+        )
+    assert before[URL].parsing_error_count == 9
+    assert failures == {}
+    assert check_feeds.classify_fresh(fresh[URL]) == "healthy"
+    assert other.xml_url not in fresh
+    assert calls == [
+        ("GET", "/v1/feeds"),
+        ("PUT", "/v1/feeds/42/refresh"),
+        ("GET", "/v1/feeds"),
+    ]
+
+
+def test_refresh_failure_never_promotes_stale_status_to_authority() -> None:
+    feed = check_feeds.FeedRow("Feed", URL, "a")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "PUT":
+            return httpx.Response(503)
+        return httpx.Response(
+            200,
+            json=[
+                {
+                    "id": 42,
+                    "feed_url": URL,
+                    "checked_at": "unchanged",
+                    "parsing_error_count": 7,
+                    "parsing_error_message": "HTTP 404",
+                }
+            ],
+        )
+
+    with client(handler) as http:
+        fresh, failures, _ = check_feeds.refresh_miniflux_feeds(
+            [feed],
+            {URL: check_feeds.Probe("gone", 404, URL)},
+            "https://mf.test",
+            "token",
+            client=http,
+            sleep=lambda _: None,
+        )
+    assert fresh == {}
+    assert URL in failures
+
+
+@pytest.mark.parametrize(
+    ("count", "message", "expected"),
+    [
+        (0, "old HTTP 404", "healthy"),
+        (1, "unexpected HTTP status code: 404", "gone"),
+        (1, "unexpected HTTP status code: 410", "gone"),
+        (1, "unexpected HTTP status code: 403", "blocked-to-this-client"),
+        (1, "This website is too slow and the request timed out", "unreachable"),
+        (1, "Unable to detect feed format", "invalid"),
+    ],
+)
+def test_classify_only_refreshed_miniflux_state(
+    count: int,
+    message: str,
+    expected: str,
+) -> None:
+    status = check_feeds.MinifluxStatus(False, count, message, id=42, checked_at="new")
+    assert check_feeds.classify_fresh(status) == expected
+
+
+def test_refresh_204_without_updated_timestamp_does_not_verify_feed() -> None:
+    feed = check_feeds.FeedRow("Feed", URL, "a")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "PUT":
+            return httpx.Response(204)
+        return httpx.Response(
+            200,
+            json=[
+                {
+                    "id": 42,
+                    "feed_url": URL,
+                    "checked_at": "unchanged",
+                    "parsing_error_count": 9,
+                    "parsing_error_message": "old HTTP 404",
+                }
+            ],
+        )
+
+    with client(handler) as http:
+        fresh, failures, _ = check_feeds.refresh_miniflux_feeds(
+            [feed],
+            {URL: check_feeds.Probe("gone", 404, URL)},
+            "https://mf.test",
+            "token",
+            client=http,
+            sleep=lambda _: None,
+        )
+    assert fresh == {}
+    assert failures[URL] == "refresh not observable in subsequent Miniflux feed record"
