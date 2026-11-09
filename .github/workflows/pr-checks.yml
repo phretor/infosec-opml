@@ -159,10 +159,9 @@ jobs:
 
   health:
     name: Feed health (advisory)
-    # Skip on fork PRs: Miniflux secrets are not exposed to forks.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # No Miniflux secrets required: probe every feed even on fork PRs.
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     permissions:
       contents: read   # checkout only
     steps:
@@ -180,14 +179,8 @@ jobs:
       - name: Install project
         run: uv sync --extra dev
       - name: Extract base feeds.xml
-        # Feeds new relative to the base are not in Miniflux yet; check_feeds
-        # reports them as pending instead of dead.
         run: git show HEAD^1:feeds.xml > "$RUNNER_TEMP/base-feeds.xml"
       - name: Check feed health
-        env:
-          # Same repo-level secret scope as miniflux-sync.yml.
-          MINIFLUX_URL: ${{ secrets.MINIFLUX_URL }}  # zizmor: ignore[secrets-outside-env]
-          MINIFLUX_TOKEN: ${{ secrets.MINIFLUX_TOKEN }}  # zizmor: ignore[secrets-outside-env]
         run: >-
           uv run python -m scripts.check_feeds --fail-on-dead
           --base-opml "$RUNNER_TEMP/base-feeds.xml"

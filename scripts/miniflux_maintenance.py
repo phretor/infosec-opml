@@ -14,7 +14,7 @@ from typing import Literal
 
 import httpx
 
-from scripts.check_feeds import HTTP_TIMEOUT
+HTTP_TIMEOUT = 30.0
 
 Action = Literal["repoint", "delete"]
 

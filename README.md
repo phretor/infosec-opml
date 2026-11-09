@@ -53,13 +53,21 @@ empty categories from OPML exports, so the folder is not present in `feeds.xml` 
 (`.github/workflows/miniflux-sync.yml`, also runnable via `workflow_dispatch`). The workflow fetches
 Miniflux's OPML export, normalizes it, and — on a real diff — opens or updates a single long-lived
 PR on `bot/miniflux-sync` with the patched `feeds.xml`, README counts, and a mechanical CHANGELOG
-entry. A second job runs `scripts.check_feeds --fail-on-dead` against the resulting file. Health
-status is read from Miniflux's own `/v1/feeds` API (not probed from the GitHub runner), so the gate
-reflects whether Miniflux can actually fetch each feed. Dead feeds (disabled, over the parsing-error
-threshold, or missing from Miniflux) block the PR as a red check. Transient errors, feeds over
-the threshold whose last error is a temporary reachability failure (network/DNS error, timeout, HTTP
-429 or 5xx), and, in PR checks, feeds added by the PR that Miniflux has not subscribed to yet are
-reported but do not.
+entry. A separate downstream job runs `scripts.check_feeds --fail-on-dead` on the resulting
+file; it cannot change the completed sync job or prevent its PR from opening. The check
+directly fetches every feed from its runner with a feed-aware User-Agent and Accept header,
+follows redirects, caps bodies at 8 MiB, and uses up to three attempts (0.3/0.6s backoff
+for connection errors, timeouts, 429 and 5xx). It uses 24 workers, 4s connect/6s read
+timeouts and a 25-minute job limit. A complete, parseable RSS/Atom response with HTTP 2xx
+is healthy. Live 404/410 is gone and fails `--fail-on-dead`; 403 or a CAPTCHA/JS challenge
+is blocked-to-this-client, not dead. Timeouts, network errors, 429, 5xx, bodies
+exceeding the read cap, and other inconclusive statuses are unreachable now,
+not dead. Invalid 2xx XML/HTML is reported separately, not treated as proof of
+retirement. The report includes final redirect URL, HTTP status and retry count.
+Miniflux error counters are optional historical
+annotations, never verdicts; `--min-error-count` filters those annotations. `--base-opml`
+marks PR additions without exempting them from live probing. Health checks run on fork PRs
+without Miniflux credentials, as an independent advisory job.
 
 `normalize_opml` writes a canonical order, not Miniflux's response order: folders sort by their
 `text` (the numeric prefixes encode the taxonomy order), and feeds inside each folder sort
@@ -81,10 +89,9 @@ script changes Miniflux directly (eight URL repoints and thirteen deletions,
 including both Project Zero blogger aliases; the canonical Project Zero feed
 is already subscribed and stays untouched); it does not edit `feeds.xml`. Missing URLs or
 replacement collisions stop mutation rather than selecting a different feed.
-Five independently verified valid feeds that Miniflux cannot fetch due to bot
-protection remain subscribed and appear separately as non-failing
-`bot-blocked` health exceptions, only for exact URLs and matching challenge/403
-errors. A subsequent sync proposes the updated OPML.
+Feeds that Miniflux cannot fetch due to bot protection remain subscribed; each health
+check reports the runner's live result as `blocked-to-this-client` if it encounters a
+403 or challenge, without a hard-coded URL exemption.
 
 ## Suggesting feeds
 

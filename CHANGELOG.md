@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-09
+
+### Changed
+- Feed health now probes URLs directly with bounded retries and validates RSS/Atom
+  responses. Only live 404/410 is gone; bot blocks and transient failures do not
+  fail the check. Miniflux counters remain optional diagnostics, not verdicts.
+
 ## 2026-11-01
 
 ### Added

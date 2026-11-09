@@ -1,25 +1,26 @@
-"""Classify RSS/Atom feed health using Miniflux as the source of truth.
+"""Probe each OPML feed from this client; Miniflux errors are historical context only.
 
-Miniflux already polls every feed on its own schedule and tracks parsing errors
-with a stable `parsing_error_count` field. We read that view instead of probing
-URLs from the CI runner, which was unreliable because many hosts return 4xx/429
-to generic cloud IPs for feeds that are perfectly healthy from Miniflux's end.
-
-A feed over the error threshold whose last error is a temporary reachability
-failure (network/DNS error, timeout, HTTP 429, HTTP 5xx) is `unreachable`, not
-`dead`: it is reported but never fails `--fail-on-dead`. The same applies when
-the Miniflux API itself is temporarily unreachable. With `--base-opml`, a feed
-missing from Miniflux that is new relative to that base (a PR addition Miniflux
-has not subscribed to yet) is `pending`, also non-failing.
+Policy: a 2xx response is healthy only with a complete, parseable RSS/RDF/Atom
+feed body. Live 404/410 is gone (the only failing verdict); 403 or a recognizable
+bot/CAPTCHA/JavaScript challenge is blocked-to-this-client, not dead. Timeouts,
+connection failures, 429, 5xx, oversized bodies and other inconclusive
+responses are unreachable now, never proof of retirement. Invalid 2xx XML/HTML
+is reported separately and is not automatically gone. Follow redirects, read
+at most 8 MiB, and retry transient transport errors, 429 and 5xx twice with
+0.3/0.6 second backoff.
+Each URL gets at most three requests, with 24 workers and 4s connect / 6s read
+timeouts. --fail-on-dead fails only on live 404/410. --base-opml marks new feeds
+in the report; --min-error-count filters optional Miniflux warning annotations.
 """
 
 from __future__ import annotations
 
 import argparse
 import os
-import re
 import sys
+import time
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -28,49 +29,22 @@ import httpx
 
 FEEDS_XML = Path(__file__).resolve().parent.parent / "feeds.xml"
 DEFAULT_MIN_ERROR_COUNT = 3
-HTTP_TIMEOUT = 30.0
-
-Verdict = Literal["ok", "transient", "unreachable", "pending", "bot-blocked", "dead"]
-
-# Prefixes of Miniflux's (en_US) parsing_error_message strings that mean the
-# site was temporarily unreachable rather than gone or broken. Source:
-# miniflux/v2 internal/locale/translations/en_US.json, error.network_operation,
-# error.network_timeout, error.http_too_many_requests, and the error.http_*
-# "not available at the moment" family (500/502/503/504/other status codes).
-_TRANSIENT_MESSAGE_PREFIXES = (
-    "Miniflux is not able to reach this website due to a network error",
-    "This website is too slow and the request timed out",
-    "Miniflux generated too many requests to this website",
-    "The website is not available at the moment due to",
-)
-_UNEXPECTED_STATUS_RE = re.compile(r"unexpected HTTP status code: (\d+)")
-
-# These feeds were independently verified valid on 2026-11-01 but Miniflux's
-# IP receives a Cloudflare CAPTCHA/JS challenge or 403 bot protection. This
-# exception applies only to these exact URLs AND matching challenge messages;
-# disabled, missing, 404, and other parsing failures remain dead.
-_BOT_BLOCKED_URLS = frozenset(
-    {
-        "https://blog.qualys.com/feed",
-        "https://rafa.hashnode.dev/rss.xml",
-        "https://aviii.hashnode.dev/rss.xml",
-        "https://blog.mozilla.org/security/feed/",
-        "https://www.digitaljournal.com/feed",
-    }
-)
-_BOT_CHALLENGE_RE = re.compile(
-    r"cloudflare|captcha|bot challenge|javascript challenge|enable javascript",
-    re.IGNORECASE,
-)
-_FORBIDDEN_MESSAGE = (
-    "Access to this website is forbidden. Perhaps, this website has a bot protection mechanism?"
-)
+WORKERS = 24
+MAX_ATTEMPTS = 3
+MAX_BODY = 8 * 1024 * 1024
+HEADERS = {
+    "User-Agent": "infosec-opml-feed-health/1.0 (+https://github.com/phretor/infosec-opml)",
+    "Accept": (
+        "application/atom+xml, application/rss+xml, application/rdf+xml, "
+        "application/xml, text/xml; q=0.9, */*; q=0.5"
+    ),
+}
+TIMEOUT = httpx.Timeout(6.0, connect=4.0, pool=4.0)
+Verdict = Literal["healthy", "gone", "blocked-to-this-client", "unreachable", "invalid"]
 
 
 @dataclass(frozen=True)
 class FeedRow:
-    """A feed from feeds.xml, independent of Miniflux knowledge."""
-
     name: str
     xml_url: str
     folder: str
@@ -78,280 +52,197 @@ class FeedRow:
 
 @dataclass(frozen=True)
 class MinifluxStatus:
-    """Just the health-relevant subset of Miniflux's feed record."""
-
     disabled: bool
     parsing_error_count: int
     parsing_error_message: str
 
 
 @dataclass(frozen=True)
-class ClassifiedFeed:
-    """Classification outcome for one feed in feeds.xml."""
-
-    feed: FeedRow
+class Probe:
     verdict: Verdict
-    status: MinifluxStatus | None  # None iff feed is missing from Miniflux
+    status_code: int | None
+    final_url: str
+    detail: str = ""
+    attempts: int = 1
 
 
 def parse_feeds(path: Path) -> list[FeedRow]:
-    """Parse feeds.xml into FeedRow objects, flat list across all folders."""
-    tree = ET.parse(path)
-    rows: list[FeedRow] = []
-    body = tree.getroot().find("body")
+    root = ET.parse(path).getroot()
+    body = root.find("body")
     if body is None:
-        return rows
-    for folder in body:
-        folder_name = folder.get("text", "")
-        for feed in folder:
-            if feed.get("type") == "rss" and feed.get("xmlUrl"):
-                rows.append(
-                    FeedRow(
-                        name=feed.get("text", ""),
-                        xml_url=feed.get("xmlUrl", ""),
-                        folder=folder_name,
-                    )
-                )
-    return rows
+        return []
+    return [
+        FeedRow(feed.get("text", ""), feed.get("xmlUrl", ""), folder.get("text", ""))
+        for folder in body
+        for feed in folder
+        if feed.get("type") == "rss" and feed.get("xmlUrl")
+    ]
 
 
-def _fetch_feeds_via(
-    client: httpx.Client, base_url: str, api_token: str
-) -> dict[str, MinifluxStatus]:
-    """Core fetch over a caller-owned client; see fetch_miniflux_feeds."""
-    resp = client.get(
-        base_url.rstrip("/") + "/v1/feeds",
-        headers={"X-Auth-Token": api_token},
-    )
-    resp.raise_for_status()
-    return {
-        row["feed_url"]: MinifluxStatus(
-            disabled=bool(row.get("disabled", False)),
-            parsing_error_count=int(row.get("parsing_error_count", 0)),
-            parsing_error_message=str(row.get("parsing_error_message", "")),
-        )
-        for row in resp.json()
-    }
+def fetch_miniflux_feeds(base_url: str, token: str) -> dict[str, MinifluxStatus]:
+    """Optional diagnostic data; failure never changes a live probe verdict."""
+    with httpx.Client(timeout=TIMEOUT, follow_redirects=True) as client:
+        response = client.get(base_url.rstrip("/") + "/v1/feeds", headers={"X-Auth-Token": token})
+        response.raise_for_status()
+        return {
+            row["feed_url"]: MinifluxStatus(
+                bool(row.get("disabled", False)),
+                int(row.get("parsing_error_count", 0)),
+                str(row.get("parsing_error_message", "")),
+            )
+            for row in response.json()
+        }
 
 
-def fetch_miniflux_feeds(
-    base_url: str, api_token: str, client: httpx.Client | None = None
-) -> dict[str, MinifluxStatus]:
-    """GET /v1/feeds, returning {feed_url: MinifluxStatus}.
-
-    If `client` is passed in, the caller owns its lifetime (used by tests to
-    inject a MockTransport). Otherwise a short-lived client is opened and
-    closed here.
-    """
-    if client is not None:
-        return _fetch_feeds_via(client, base_url, api_token)
-    with httpx.Client(timeout=HTTP_TIMEOUT, follow_redirects=True) as owned:
-        return _fetch_feeds_via(owned, base_url, api_token)
-
-
-def is_transient_unreachable(message: str) -> bool:
-    """True if a Miniflux error message is a temporary reachability failure.
-
-    The "not available at the moment" family also covers Miniflux's
-    unexpected-status-code message, which can carry a 4xx; only 5xx counts.
-    """
-    message = message.strip()
-    if not message.startswith(_TRANSIENT_MESSAGE_PREFIXES):
+def _feed_xml(body: bytes) -> bool:
+    try:
+        root = ET.fromstring(body)
+    except ET.ParseError:
         return False
-    status = _UNEXPECTED_STATUS_RE.search(message)
-    return status is None or int(status.group(1)) >= 500
-
-
-def classify(status: MinifluxStatus | None, min_error_count: int, url: str = "") -> Verdict:
-    """Classify one feed given its Miniflux status (or None if missing)."""
-    if status is None:
-        return "dead"
-    if status.disabled:
-        return "dead"
-    if status.parsing_error_count >= min_error_count:
-        message = status.parsing_error_message.strip()
-        if url in _BOT_BLOCKED_URLS and (
-            _BOT_CHALLENGE_RE.search(message)
-            or message.startswith(_FORBIDDEN_MESSAGE)
-            or "unexpected HTTP status code: 403" in message
-        ):
-            return "bot-blocked"
-        if is_transient_unreachable(message):
-            return "unreachable"
-        return "dead"
-    if status.parsing_error_count > 0:
-        return "transient"
-    return "ok"
-
-
-def classify_feeds(
-    feeds: list[FeedRow],
-    miniflux_by_url: dict[str, MinifluxStatus],
-    min_error_count: int,
-    new_urls: frozenset[str] = frozenset(),
-) -> list[ClassifiedFeed]:
-    """Apply classify() to each feed in feeds.xml.
-
-    A feed missing from Miniflux whose URL is in `new_urls` (added relative to
-    the PR base) is `pending` rather than `dead`.
-    """
-    out: list[ClassifiedFeed] = []
-    for f in feeds:
-        status = miniflux_by_url.get(f.xml_url)
-        if status is None and f.xml_url in new_urls:
-            verdict: Verdict = "pending"
-        else:
-            verdict = classify(status, min_error_count, f.xml_url)
-        out.append(ClassifiedFeed(feed=f, verdict=verdict, status=status))
-    return out
-
-
-def print_section(title: str, entries: list[ClassifiedFeed]) -> None:
-    """Render a classified bucket to stdout, sorted by folder then feed name.
-
-    Each entry prints the verdict in a right-aligned 12-char column followed
-    by the feed URL, the feed name and folder, and (when known) Miniflux's
-    error count, disabled flag, and a trimmed message snippet. Empty buckets
-    render nothing so the top-level section headers stay informative.
-    """
-    if not entries:
-        return
-    entries = sorted(entries, key=lambda e: (e.feed.folder, e.feed.name))
-    print("=" * 80)
-    print(title)
-    print("=" * 80)
-    for e in entries:
-        label = e.verdict
-        print(f"  [{label:>12}]  {e.feed.xml_url}")
-        print(f"                 Feed: {e.feed.name}")
-        print(f"                 Folder: {e.feed.folder}")
-        if e.status is None:
-            print("                 Miniflux: feed not found")
-        else:
-            count = e.status.parsing_error_count
-            msg = e.status.parsing_error_message.strip().replace("\n", " ")
-            msg_snippet = msg[:120] + ("…" if len(msg) > 120 else "")
-            disabled_tag = " (disabled)" if e.status.disabled else ""
-            print(f"                 Miniflux: {count} error(s){disabled_tag}")
-            if msg_snippet:
-                print(f"                 Message: {msg_snippet}")
-        print()
-
-
-def _is_transient_api_error(exc: httpx.HTTPError) -> bool:
-    """True if a Miniflux API failure is temporary (network, 429, or 5xx)."""
-    if isinstance(exc, httpx.TransportError):
-        return True
-    if isinstance(exc, httpx.HTTPStatusError):
-        code = exc.response.status_code
-        return code == 429 or code >= 500
+    name = root.tag.rsplit("}", 1)[-1].lower()
+    children = {child.tag.rsplit("}", 1)[-1].lower() for child in root}
+    if name == "rss":
+        return any(child.tag.rsplit("}", 1)[-1].lower() == "channel" and
+                   any(item.tag.rsplit("}", 1)[-1].lower() in {"title", "item"} for item in child)
+                   for child in root)
+    if name in {"feed", "rdf"}:
+        return bool(children & ({"title", "entry"} if name == "feed" else {"channel", "item"}))
     return False
 
 
+def _challenge(body: bytes) -> bool:
+    text = body[:65536].lower()
+    return any(marker in text for marker in (
+        b"cf-chl-", b"cloudflare ray id", b"checking your browser",
+        b"verify you are human", b"captcha", b"javascript challenge",
+        b"enable javascript to continue", b"just a moment...",
+    ))
+
+
+def probe_feed(url: str, client: httpx.Client, sleep=time.sleep) -> Probe:
+    """Fetch one URL within a three-attempt budget; keep its last live evidence."""
+    parsed_url = httpx.URL(url)
+    if parsed_url.scheme not in {"http", "https"} or not parsed_url.host:
+        return Probe("invalid", None, url, "not an HTTP URL")
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        status: int | None = None
+        final = url
+        try:
+            with client.stream("GET", url, headers=HEADERS, follow_redirects=True) as response:
+                status = response.status_code
+                final = str(response.url)
+                # Only read bodies relevant to feed validity / challenge detection.
+                body = b""
+                if status == 403 or 200 <= status < 300 or status == 429 or status >= 500:
+                    chunks = bytearray()
+                    for chunk in response.iter_bytes():
+                        chunks.extend(chunk[: max(0, MAX_BODY + 1 - len(chunks))])
+                        if len(chunks) > MAX_BODY:
+                            break
+                    body = bytes(chunks)
+                if status in {404, 410}:
+                    return Probe("gone", status, final, attempts=attempt)
+                if status == 403:
+                    return Probe("blocked-to-this-client", status, final, attempts=attempt)
+                if 200 <= status < 300:
+                    if len(body) > MAX_BODY:
+                        return Probe(
+                            "unreachable", status, final, "body exceeds 8 MiB cap", attempt,
+                        )
+                    if _feed_xml(body):
+                        return Probe("healthy", status, final, attempts=attempt)
+                    challenge = _challenge(body)
+                    return Probe(
+                        "blocked-to-this-client" if challenge else "invalid",
+                        status, final,
+                        "challenge page" if challenge else "not a parseable RSS/Atom feed",
+                        attempt,
+                    )
+                if _challenge(body):
+                    return Probe("blocked-to-this-client", status, final, attempts=attempt)
+                detail = f"HTTP {status}"
+                retry = status == 429 or status >= 500
+        except httpx.RequestError as exc:
+            detail = type(exc).__name__
+            retry = True
+        except (ValueError, ET.ParseError) as exc:
+            return Probe("invalid", None, url, type(exc).__name__, attempt)
+        if not retry or attempt == MAX_ATTEMPTS:
+            return Probe("unreachable", status, final, detail, attempt)
+        sleep(0.3 * 2 ** (attempt - 1))
+    raise AssertionError("attempt budget exhausted")
+
+
+def probe_feeds(feeds: list[FeedRow], client: httpx.Client | None = None,
+                workers: int = WORKERS) -> dict[str, Probe]:
+    """One shared thread-safe client, bounded workers, one probe per distinct URL."""
+    urls = list(dict.fromkeys(feed.xml_url for feed in feeds))
+    if client is None:
+        with httpx.Client(timeout=TIMEOUT, limits=httpx.Limits(max_connections=workers),
+                          follow_redirects=True) as owned:
+            return probe_feeds(feeds, owned, workers)
+
+    def safe_probe(url: str) -> Probe:
+        try:
+            return probe_feed(url, client)
+        except Exception as exc:  # noqa: BLE001 - isolate unexpected per-feed failures
+            return Probe("unreachable", None, url, type(exc).__name__)
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return dict(zip(urls, pool.map(safe_probe, urls)))
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description="Classify RSS/Atom feed health using Miniflux's API"
-    )
+    parser = argparse.ArgumentParser(description="Probe RSS/Atom feed URLs from this client")
     parser.add_argument(
-        "--fail-on-dead",
-        action="store_true",
-        help="Exit non-zero if any feed in feeds.xml is classified dead",
+        "--fail-on-dead", action="store_true", help="Fail on live HTTP 404/410 only",
     )
-    parser.add_argument(
-        "--min-error-count",
-        type=int,
-        default=DEFAULT_MIN_ERROR_COUNT,
-        help=(
-            "Parsing-error threshold at which a feed is dead or unreachable "
-            f"(default: {DEFAULT_MIN_ERROR_COUNT})"
-        ),
-    )
-    parser.add_argument(
-        "--base-opml",
-        type=Path,
-        help=(
-            "feeds.xml from the PR base; feeds absent from it and from Miniflux "
-            "are pending (not yet pushed to Miniflux), not dead"
-        ),
-    )
+    parser.add_argument("--base-opml", type=Path, help="Mark feeds new relative to the PR base")
+    parser.add_argument("--min-error-count", type=int, default=DEFAULT_MIN_ERROR_COUNT,
+                        help="Show optional Miniflux warnings at or above this count (default: 3)")
     args = parser.parse_args()
-
-    if not FEEDS_XML.exists():
-        print(f"error: {FEEDS_XML} not found", file=sys.stderr)
-        sys.exit(1)
-
-    base = os.environ.get("MINIFLUX_URL")
-    token = os.environ.get("MINIFLUX_TOKEN")
-    if not base or not token:
-        print(
-            "error: MINIFLUX_URL and MINIFLUX_TOKEN must be set",
-            file=sys.stderr,
-        )
-        sys.exit(2)
-
+    if args.min_error_count < 1:
+        parser.error("--min-error-count must be positive")
     feeds = parse_feeds(FEEDS_XML)
-    try:
-        miniflux = fetch_miniflux_feeds(base, token)
-    except httpx.HTTPError as exc:
-        if not _is_transient_api_error(exc):
-            raise
-        print(
-            f"warning: Miniflux API temporarily unreachable, skipping health check: {exc}",
-            file=sys.stderr,
-        )
-        return
-    new_urls: frozenset[str] = frozenset()
-    if args.base_opml is not None:
-        base_urls = {f.xml_url for f in parse_feeds(args.base_opml)}
-        new_urls = frozenset(f.xml_url for f in feeds if f.xml_url not in base_urls)
-    classified = classify_feeds(feeds, miniflux, args.min_error_count, new_urls)
-
-    buckets: dict[Verdict, list[ClassifiedFeed]] = {
-        "ok": [],
-        "transient": [],
-        "unreachable": [],
-        "pending": [],
-        "bot-blocked": [],
-        "dead": [],
-    }
-    for c in classified:
-        buckets[c.verdict].append(c)
-
-    print(f"Feeds: {len(feeds)} in feeds.xml, {len(miniflux)} in Miniflux\n")
-    print(
-        f"Results: {len(buckets['ok'])} OK, "
-        f"{len(buckets['dead'])} dead, "
-        f"{len(buckets['unreachable'])} temporarily unreachable, "
-        f"{len(buckets['pending'])} pending, "
-        f"{len(buckets['bot-blocked'])} bot-blocked exception(s), "
-        f"{len(buckets['transient'])} transient "
-        f"(threshold: parsing_error_count >= {args.min_error_count})\n"
-    )
-
-    print_section(
-        "DEAD FEEDS (disabled, over error threshold, or missing from Miniflux)",
-        buckets["dead"],
-    )
-    print_section(
-        "TEMPORARILY UNREACHABLE (over error threshold on network error, timeout, "
-        "429, or 5xx; not failing)",
-        buckets["unreachable"],
-    )
-    print_section(
-        "BOT-BLOCKED EXCEPTIONS (verified valid feeds; Miniflux CAPTCHA/JS or 403; not failing)",
-        buckets["bot-blocked"],
-    )
-    print_section(
-        "PENDING (new in this PR, not yet in Miniflux; not failing)",
-        buckets["pending"],
-    )
-    if args.min_error_count <= 1:
-        transient_title = "TRANSIENT ERRORS (none at this threshold)"
-    else:
-        transient_title = f"TRANSIENT ERRORS (parsing_error_count 1-{args.min_error_count - 1})"
-    print_section(transient_title, buckets["transient"])
-
-    if args.fail_on_dead and buckets["dead"]:
+    new_urls = set()
+    if args.base_opml:
+        old_urls = {feed.xml_url for feed in parse_feeds(args.base_opml)}
+        new_urls = {feed.xml_url for feed in feeds} - old_urls
+    miniflux: dict[str, MinifluxStatus] = {}
+    if os.environ.get("MINIFLUX_URL") and os.environ.get("MINIFLUX_TOKEN"):
+        try:
+            miniflux = fetch_miniflux_feeds(os.environ["MINIFLUX_URL"],
+                                             os.environ["MINIFLUX_TOKEN"])
+        except (httpx.HTTPError, ValueError, KeyError) as exc:
+            print(f"Miniflux diagnostics unavailable: {exc}", file=sys.stderr)
+    probes = probe_feeds(feeds)
+    buckets: dict[Verdict, list[FeedRow]] = {key: [] for key in
+        ("healthy", "gone", "blocked-to-this-client", "unreachable", "invalid")}
+    for feed in feeds:
+        buckets[probes[feed.xml_url].verdict].append(feed)
+    print(f"Feeds: {len(feeds)} in feeds.xml; {len(miniflux)} Miniflux diagnostics")
+    print("Results: " + ", ".join(f"{len(rows)} {verdict}" for verdict, rows in buckets.items()))
+    for verdict, rows in buckets.items():
+        if not rows or verdict == "healthy":
+            continue
+        print(f"\n{verdict.upper()} ({len(rows)})")
+        for feed in sorted(rows, key=lambda item: (item.folder, item.name)):
+            result = probes[feed.xml_url]
+            status = result.status_code if result.status_code is not None else "no response"
+            print(f"  [{verdict}] {feed.xml_url} | HTTP {status} | final: {result.final_url}"
+                  f" | attempts: {result.attempts} | {feed.name} ({feed.folder})")
+            if result.detail:
+                print(f"    Evidence: {result.detail}")
+            previous = miniflux.get(feed.xml_url)
+            if previous and (
+                previous.parsing_error_count >= args.min_error_count or previous.disabled
+            ):
+                print(f"    Miniflux history: {previous.parsing_error_count} errors"
+                      f"{' (disabled)' if previous.disabled else ''}; "
+                      f"{previous.parsing_error_message[:120]}")
+            if feed.xml_url in new_urls:
+                print("    New in PR base comparison")
+    if args.fail_on_dead and buckets["gone"]:
         sys.exit(1)
 
 
