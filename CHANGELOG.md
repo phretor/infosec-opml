@@ -8,6 +8,9 @@
   supplementary evidence; both CI checks are report-only. The authoritative
   in-cluster view requires an explicit Miniflux refresh and subsequent read;
   stale counters and unavailable refreshes never produce a verdict.
+- Replaced the applied one-time Miniflux maintenance plan with deletions for
+  R0rt1z2 (live 404; no replacement) and Firmware Security (domain parked for
+  sale; no feed). The Miniflux sync will publish the resulting feed changes.
 
 ## 2026-11-01
 
