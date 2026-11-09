@@ -1,6 +1,6 @@
 """One-time, explicitly approved Miniflux feed repair; dry run by default.
 
-The fixed URL list comes from the verified 2026-11-01 feed-health findings.
+The fixed URLs are the two feeds confirmed retired by the 2026-11-09 health check.
 No OPML edits are made here: Miniflux is the source of truth.
 """
 
@@ -27,80 +27,10 @@ class Repair:
     new: str | None = None
 
 
-# Both Project Zero blogger aliases duplicate an existing canonical subscription.
-# Jorenar keeps one of its two broken old URLs, repointed to the verified feed.
+# Only the two confirmed retired feeds are in this one-time plan.
 REPAIRS = (
-    Repair(
-        "delete",
-        "https://googleprojectzero.blogspot.com/feeds/posts/default?alt=rss",
-        "duplicate Project Zero alias; canonical feed already subscribed",
-    ),
-    Repair(
-        "delete",
-        "https://googleprojectzero.blogspot.com/feeds/posts/default",
-        "duplicate Project Zero alias",
-    ),
-    Repair("delete", "https://blog.trailofbits.com/feed/", "duplicate redirect alias"),
-    Repair("delete", "https://blog.sonarsource.com/rss.xml", "duplicate redirect alias"),
-    Repair("delete", "https://www.wiz.io/blog/rss/", "duplicate redirect alias"),
-    Repair("delete", "https://blog.nviso.eu/feed", "duplicate redirect alias"),
-    Repair("delete", "https://www.welivesecurity.com/feed", "duplicate redirect alias"),
-    Repair("delete", "https://www.technologyreview.com/stories.rss", "duplicate redirect alias"),
-    Repair(
-        "repoint",
-        "https://blog.exatrack.com/index.xml",
-        "moved feed (verified)",
-        "https://exatrack.com/rss.xml",
-    ),
-    Repair(
-        "repoint",
-        "https://haxrob.net/rss/",
-        "moved feed (verified; dormant)",
-        "https://haxrob.net/rss.xml",
-    ),
-    Repair(
-        "repoint",
-        "https://codeneverdies.github.io/feed.xml",
-        "moved feed (verified)",
-        "https://codeneverdies.github.io/index.xml",
-    ),
-    Repair(
-        "repoint",
-        "https://riccardoancarani.github.io/feed.xml",
-        "moved feed (verified; dormant)",
-        "https://riccardoancarani.github.io/index.xml",
-    ),
-    Repair(
-        "repoint",
-        "https://www.sentinelone.com/feed/",
-        "moved feed (verified)",
-        "https://www.sentinelone.com/blog/feed/",
-    ),
-    Repair(
-        "repoint",
-        "https://www.techtarget.com/searchsecurity/rss/Security-Wire-Daily-News.xml",
-        "moved feed (verified; replacement is site-wide news)",
-        "https://www.techtarget.com/feeds/news/",
-    ),
-    Repair(
-        "repoint",
-        "https://jorenar.com/blog/feed.xml",
-        "moved feed (verified)",
-        "https://jorenar.com/feed.xml",
-    ),
-    Repair(
-        "delete", "https://jorenar.com/blog/feed", "duplicate Jorenar entry; survivor is repointed"
-    ),
-    Repair(
-        "repoint",
-        "https://feeds2.feedburner.com/thenextweb",
-        "moved feed (verified)",
-        "https://thenextweb.com/feed",
-    ),
-    Repair("delete", "https://comsecuris.com/index.xml", "site has no live feed"),
-    Repair("delete", "https://hakaisecurity.io/feed/", "site has no live feed"),
-    Repair("delete", "https://www.legitsecurity.com/blog/rss.xml", "site has no live feed"),
-    Repair("delete", "https://hadess.io/feed/", "site has no live feed"),
+    Repair("delete", "https://blog.r0rt1z2.com/rss.xml", "live 404; no replacement found"),
+    Repair("delete", "https://firmwaresecurity.com/feed/", "domain parked for sale; no feed"),
 )
 
 
