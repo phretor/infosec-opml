@@ -58,7 +58,6 @@
       <outline text="Confidential Computing Consortium" title="Confidential Computing Consortium" type="rss" xmlUrl="https://confidentialcomputing.io/feed/" htmlUrl="https://confidentialcomputing.io"></outline>
       <outline text="Dark Mentor LLC" title="Dark Mentor LLC" type="rss" xmlUrl="https://darkmentor.com/index.xml" htmlUrl="https://darkmentor.com/"></outline>
       <outline text="Eclypsium | Supply Chain Security for the Modern Enterprise" title="Eclypsium | Supply Chain Security for the Modern Enterprise" type="rss" xmlUrl="https://eclypsium.com/feed/" htmlUrl="https://eclypsium.com/home/"></outline>
-      <outline text="Firmware  Security" title="Firmware  Security" type="rss" xmlUrl="https://firmwaresecurity.com/feed/" htmlUrl="https://firmwaresecurity.com/"></outline>
       <outline text="fred's notes" title="fred's notes" type="rss" xmlUrl="https://fredericb.info/feeds/all.atom.xml" htmlUrl="https://fredericb.info/"></outline>
       <outline text="Impalabs Blog" title="Impalabs Blog" type="rss" xmlUrl="https://blog.impalabs.com/feed.xml" htmlUrl="https://blog.impalabs.com"></outline>
       <outline text="Ken Shirriff's blog" title="Ken Shirriff's blog" type="rss" xmlUrl="https://www.righto.com/feeds/posts/default" htmlUrl="http://www.righto.com/"></outline>
@@ -439,7 +438,6 @@
       <outline text="NTinfo" title="NTinfo" type="rss" xmlUrl="https://n10info.blogspot.com/feeds/posts/default" htmlUrl="https://n10info.blogspot.com/"></outline>
       <outline text="OpenRCE: Forum Topics" title="OpenRCE: Forum Topics" type="rss" xmlUrl="https://www.openrce.org/rss/feeds/forum_topics" htmlUrl="http://www.openrce.org/rss/feeds/forum_topics"></outline>
       <outline text="Quarkslab's blog" title="Quarkslab's blog" type="rss" xmlUrl="https://blog.quarkslab.com/feeds/all.atom.xml" htmlUrl="http://blog.quarkslab.com/"></outline>
-      <outline text="R0rt1z2" title="R0rt1z2" type="rss" xmlUrl="https://blog.r0rt1z2.com/rss.xml" htmlUrl="https://blog.r0rt1z2.com/"></outline>
       <outline text="Reverse Engineering" title="Reverse Engineering" type="rss" xmlUrl="https://reverse.put.as/index.xml" htmlUrl="https://reverse.put.as/"></outline>
       <outline text="Reverse Engineering Blog" title="Reverse Engineering Blog" type="rss" xmlUrl="https://blog.deobfuscate.io/atom.xml" htmlUrl="https://blog.deobfuscate.io"></outline>
       <outline text="secret club" title="secret club" type="rss" xmlUrl="https://secret.club/feed.xml" htmlUrl="https://secret.club/"></outline>
