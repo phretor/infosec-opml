@@ -229,10 +229,8 @@ REPAIRS = (
     Repair(
         "repoint",
         "https://www.theregister.co.uk/security/headlines.atom",
-        "301 to https://www.theregister.com/security/headlines.atom"
-        " then 302 to API; target 200 RSS",
-        "https://api.theregister.com/api/v1/article?orderBy=published"
-        "&site_id=2&remapper=rss&query=tag:security",
+        "301 to https://www.theregister.com/security/headlines.atom; followed redirects 200 RSS",
+        "https://www.theregister.com/security/headlines.atom",
     ),
     Repair(
         "repoint",
