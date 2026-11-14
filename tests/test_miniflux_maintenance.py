@@ -2,14 +2,31 @@
 
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
 import httpx
 import pytest
 
 from scripts import miniflux_maintenance as maintenance
+from scripts.miniflux_maintenance import Repair
 
-R0RT1Z2 = "https://blog.r0rt1z2.com/rss.xml"
-FIRMWARE_SECURITY = "https://firmwaresecurity.com/feed/"
-UNRELATED = "https://example.org/feed.xml"
+OLD = "https://example.org/old.xml"
+NEW = "https://example.org/new.xml"
+OTHER = "https://example.org/other.xml"
+PLAN = (
+    Repair("repoint", OLD, "301 to https://example.org/new.xml; target 200 RSS", NEW),
+    Repair("delete", OTHER, "404; no replacement found"),
+)
+FEEDS_XML = Path(__file__).resolve().parent.parent / "feeds.xml"
+DROPPED = {
+    "https://blog.rapid7.com/rss/",
+    "https://www.rcesecurity.com/feed",
+    "https://adam.shostack.org/blog/feed/",
+    "https://www.secjuice.com/rss/",
+    "https://dysruptionhub.com/feed/",
+    "https://www.datacenterdynamics.com/rss",
+}
 
 
 def _client(
@@ -33,52 +50,97 @@ def _client(
 
 
 def test_dry_run_lists_exact_plan_without_mutations(capsys) -> None:
-    client, calls = _client([UNRELATED, R0RT1Z2, FIRMWARE_SECURITY])
+    client, calls = _client([repair.old for repair in maintenance.REPAIRS])
     assert maintenance.run(client, "https://mf.example/", "fake-token") == 0
     assert calls == []
-    assert capsys.readouterr().out.splitlines() == [
-        f"delete {R0RT1Z2} | live 404; no replacement found",
-        f"delete {FIRMWARE_SECURITY} | domain parked for sale; no feed",
-        "Summary (dry-run): repoint=0 delete=2 skip=0 failed=0",
-    ]
+    lines = capsys.readouterr().out.splitlines()
+    repoints = sum(repair.action == "repoint" for repair in maintenance.REPAIRS)
+    deletes = sum(repair.action == "delete" for repair in maintenance.REPAIRS)
+    assert lines[-1] == f"Summary (dry-run): repoint={repoints} delete={deletes} skip=0 failed=0"
+    assert len(lines) == len(maintenance.REPAIRS) + 1
+    for repair, line in zip(maintenance.REPAIRS, lines[:-1], strict=True):
+        assert line.startswith(f"{repair.action} {repair.old}")
+        assert repair.reason in line
+        if repair.new:
+            assert f" -> {repair.new}" in line
 
 
-def test_apply_deletes_each_target_id_exactly_once(capsys) -> None:
-    client, calls = _client([UNRELATED, R0RT1Z2, UNRELATED, FIRMWARE_SECURITY])
+def test_plan_matches_feeds_xml_and_drops_unconfirmed_leads() -> None:
+    urls = {el.get("xmlUrl") for el in ET.parse(FEEDS_XML).iter("outline") if el.get("xmlUrl")}
+    olds = [repair.old for repair in maintenance.REPAIRS]
+    news = [repair.new for repair in maintenance.REPAIRS if repair.new is not None]
+    assert len(olds) == len(set(olds))
+    assert len(news) == len(set(news))
+    assert set(news).isdisjoint(olds)
+    assert DROPPED.isdisjoint(olds)
+    by_old = {repair.old: repair for repair in maintenance.REPAIRS}
+    zdnet_keep = by_old["https://www.zdnet.com/topic/security/rss.xml"]
+    zdnet_drop = by_old["https://www.zdnet.com/blog/security/rss.xml"]
+    assert zdnet_keep.action == "repoint"
+    assert zdnet_keep.new == "https://www.zdnet.com/rss/security/"
+    assert zdnet_drop.action == "delete" and zdnet_drop.new is None
+    assert by_old["https://blog.fox-it.com/feed/"].action == "delete"
+    assert by_old["https://blog.convisoappsec.com/feed/"].action == "delete"
+    for repair in maintenance.REPAIRS:
+        assert repair.old in urls
+        assert repair.reason
+        if repair.action == "repoint":
+            assert repair.new is not None
+            assert repair.new not in urls
+            assert "200" in repair.reason
+        else:
+            assert repair.action == "delete"
+            assert repair.new is None
+
+
+def test_apply_repoints_and_deletes_by_id(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(maintenance, "REPAIRS", PLAN)
+    client, calls = _client(["https://unrelated.example/feed.xml", OLD, OTHER])
     assert maintenance.run(client, "https://mf.example", "fake-token", apply=True) == 0
     assert calls == [
-        ("DELETE", "/v1/feeds/2", None),
-        ("DELETE", "/v1/feeds/4", None),
+        ("PUT", "/v1/feeds/2", '{"feed_url":"https://example.org/new.xml"}'),
+        ("DELETE", "/v1/feeds/3", None),
     ]
-    assert "Summary (apply): repoint=0 delete=2 skip=0 failed=0" in capsys.readouterr().out
+    report = capsys.readouterr().out
+    assert f"repoint {OLD} -> {NEW}" in report
+    assert f"delete {OTHER}" in report
+    assert "Summary (apply): repoint=1 delete=1 skip=0 failed=0" in report
 
 
+@pytest.mark.parametrize("apply", [False, True])
 @pytest.mark.parametrize(
     ("urls", "reason"),
     [
-        ([R0RT1Z2, UNRELATED], "missing from Miniflux"),
-        ([R0RT1Z2, R0RT1Z2, FIRMWARE_SECURITY], "ambiguous URL"),
+        ([OTHER], "missing from Miniflux"),
+        ([OLD, OLD, OTHER], "ambiguous URL"),
+        ([OLD, OTHER, NEW], "replacement already subscribed"),
     ],
 )
-def test_missing_or_ambiguous_target_prevents_all_writes(
-    capsys, urls: list[str], reason: str
+def test_one_invalid_entry_blocks_every_write(
+    monkeypatch, capsys, apply: bool, urls: list[str], reason: str
 ) -> None:
+    monkeypatch.setattr(maintenance, "REPAIRS", PLAN)
     client, calls = _client(urls)
-    assert maintenance.run(client, "https://mf.example", "fake-token", apply=True) == 1
+    assert maintenance.run(client, "https://mf.example", "fake-token", apply=apply) == 1
     assert calls == []
     report = capsys.readouterr().out
-    assert reason in report
+    mode = "apply" if apply else "dry-run"
+    assert f"blocking: {reason}" in report
     assert "plan incomplete; no mutations" in report
-    assert "Summary (apply): repoint=0 delete=0 skip=2 failed=0" in report
+    assert "Apply will mutate nothing." in report
+    assert f"Summary ({mode}): repoint=0 delete=0 skip=2 failed=0" in report
+    assert not any(line.startswith(("repoint ", "delete ")) for line in report.splitlines())
 
 
-def test_api_failure_is_reported_and_fails_run(capsys) -> None:
-    client, calls = _client([R0RT1Z2, FIRMWARE_SECURITY], fail_on="/v1/feeds/1")
+def test_api_failure_is_reported_and_fails_run(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(maintenance, "REPAIRS", PLAN)
+    client, calls = _client([OLD, OTHER], fail_on="/v1/feeds/1")
     assert maintenance.run(client, "https://mf.example", "fake-token", apply=True) == 1
     assert calls == [
-        ("DELETE", "/v1/feeds/1", None),
+        ("PUT", "/v1/feeds/1", '{"feed_url":"https://example.org/new.xml"}'),
         ("DELETE", "/v1/feeds/2", None),
     ]
     report = capsys.readouterr().out
-    assert f"skip {R0RT1Z2} | API failure:" in report
+    assert f"skip {OLD} -> {NEW} | API failure:" in report
+    assert f"delete {OTHER}" in report
     assert "Summary (apply): repoint=0 delete=1 skip=0 failed=1" in report
