@@ -10,6 +10,7 @@ import pytest
 
 from scripts import miniflux_maintenance as maintenance
 from scripts.miniflux_maintenance import Repair
+from scripts.miniflux_push import url_key
 
 OLD = "https://example.org/old.xml"
 NEW = "https://example.org/new.xml"
@@ -66,7 +67,10 @@ def test_dry_run_lists_exact_plan_without_mutations(capsys) -> None:
 
 
 def test_plan_matches_feeds_xml_and_drops_unconfirmed_leads() -> None:
-    urls = {el.get("xmlUrl") for el in ET.parse(FEEDS_XML).iter("outline") if el.get("xmlUrl")}
+    urls = {
+        url for el in ET.parse(FEEDS_XML).iter("outline") if (url := el.get("xmlUrl")) is not None
+    }
+    keys = {url_key(url) for url in urls}
     olds = [repair.old for repair in maintenance.REPAIRS]
     news = [repair.new for repair in maintenance.REPAIRS if repair.new is not None]
     assert len(olds) == len(set(olds))
@@ -81,12 +85,26 @@ def test_plan_matches_feeds_xml_and_drops_unconfirmed_leads() -> None:
     assert zdnet_drop.action == "delete" and zdnet_drop.new is None
     assert by_old["https://blog.fox-it.com/feed/"].action == "delete"
     assert by_old["https://blog.convisoappsec.com/feed/"].action == "delete"
+    carnal = by_old["https://carnal0wnage.blogspot.com/feeds/posts/default"]
+    assert carnal.action == "repoint"
+    assert carnal.new == "https://blog.carnal0wnage.com/feeds/posts/default"
+    assert carnal.reason == (
+        "301 to http://blog.carnal0wnage.com/feeds/posts/default; "
+        "the https form serves application/atom+xml 200."
+    )
+    techmeme = by_old["https://www.techmeme.com/index.xml"]
+    assert techmeme.action == "repoint"
+    assert techmeme.new == "https://www.techmeme.com/feed.xml"
+    assert techmeme.reason == (
+        "301 to http://www.techmeme.com/feed.xml; the https form serves valid RSS 200."
+    )
     for repair in maintenance.REPAIRS:
         assert repair.old in urls
         assert repair.reason
         if repair.action == "repoint":
             assert repair.new is not None
             assert repair.new not in urls
+            assert url_key(repair.new) not in keys
             assert "200" in repair.reason
         else:
             assert repair.action == "delete"

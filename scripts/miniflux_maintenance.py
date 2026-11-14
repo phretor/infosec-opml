@@ -120,6 +120,13 @@ REPAIRS = (
     ),
     Repair(
         "repoint",
+        "https://carnal0wnage.blogspot.com/feeds/posts/default",
+        "301 to http://blog.carnal0wnage.com/feeds/posts/default; "
+        "the https form serves application/atom+xml 200.",
+        "https://blog.carnal0wnage.com/feeds/posts/default",
+    ),
+    Repair(
+        "repoint",
         "https://blog.securitybreached.org/feed",
         "308 to https://blog.securitybreached.org/rss.xml; target 200 RSS",
         "https://blog.securitybreached.org/rss.xml",
@@ -291,6 +298,12 @@ REPAIRS = (
         "https://techblog.netflix.com/feeds/posts/default",
         "301 to https://medium.com/feed/netflix-techblog; target 200 RSS",
         "https://medium.com/feed/netflix-techblog",
+    ),
+    Repair(
+        "repoint",
+        "https://www.techmeme.com/index.xml",
+        "301 to http://www.techmeme.com/feed.xml; the https form serves valid RSS 200.",
+        "https://www.techmeme.com/feed.xml",
     ),
     Repair(
         "repoint",
