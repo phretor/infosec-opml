@@ -25,6 +25,20 @@ by Federico Maggi (@phretor).
 - Folder names use emoji prefixes for visual categorization — preserve this convention when adding folders.
 - Use `uv run python -m scripts.stats` to check current feed counts and folder breakdown.
 - Use `uv run python -m scripts.check_feeds` to verify feed health before committing.
+- Use `uv run python -m scripts.lint_opml` to lint structure. Errors fail the command and CI;
+  warnings are printed and do not change the exit code.
+  - Flat folders, folder names matching `^NN <emoji> …`, no feeds at `<body>` root.
+  - Each feed has `xmlUrl`, `htmlUrl`, `text`, `title`, and `type="rss"`.
+  - Duplicate `xmlUrl` after normalization is an error (`duplicate-xmlurl`). The key matches
+    `scripts.miniflux_push.url_key` (scheme, host case, trailing slash; query kept; fragment
+    dropped) and also strips one leading `www.` host label. Push and sync do not strip `www.`.
+    Two www-only aliases already in Miniflux (Claroty Team82, MalwareTech) are warnings while
+    their `xmlUrl` set is unchanged (`EXISTING_WWW_ALIASES`); any other collision is an error.
+    Do not delete those feeds in a PR — the additions gate rejects removals and sync would
+    restore them.
+  - Duplicate `htmlUrl` under that same normalization is a warning (`duplicate-htmlurl`): one
+    site may publish several feeds.
+  - An `xmlUrl` using cleartext `http://` is a warning (`cleartext-xmlurl`).
 
 ## Documentation
 

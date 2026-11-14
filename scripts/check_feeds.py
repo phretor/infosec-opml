@@ -182,7 +182,7 @@ def refresh_miniflux_feeds(
 
     with ThreadPoolExecutor(max_workers=6) as pool:
         results = list(pool.map(lambda item: refresh(*item), candidates.items()))
-    failures = {url: reason for url, reason in zip(candidates, results) if reason}
+    failures = {url: reason for url, reason in zip(candidates, results, strict=True) if reason}
     if candidates:
         sleep(0.5)
     after = fetch_miniflux_feeds(base_url, token, client)
@@ -326,7 +326,7 @@ def probe_feeds(
             return Probe("unreachable", None, url, type(exc).__name__)
 
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        return dict(zip(urls, pool.map(safe_probe, urls)))
+        return dict(zip(urls, pool.map(safe_probe, urls), strict=True))
 
 
 def main() -> None:
