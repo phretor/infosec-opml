@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-14
+
+### Changed
+- Replaced the applied one-time Miniflux maintenance plan with repoints for
+  feeds that permanently redirect to a working RSS/Atom URL (rechecked
+  2026-11-14) and deletions for Fox-IT, Conviso AppSec, and the duplicate
+  ZDNet security URL. The surviving ZDNet entry points at the security feed
+  rather than the general-news redirect. Dry-run names every entry that blocks
+  an all-or-nothing apply. A second recheck added Carnal0wnage Blog (301 to
+  the blog.carnal0wnage.com Atom feed; the https form returns 200) and Techmeme
+  (301 to feed.xml; the https form returns valid RSS 200). Miniflux sync
+  publishes the feed changes; this commit does not edit `feeds.xml`.
+
 ## 2026-11-09
 
 ### Removed
