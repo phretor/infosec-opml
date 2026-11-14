@@ -12,6 +12,16 @@
   the blog.carnal0wnage.com Atom feed; the https form returns 200) and Techmeme
   (301 to feed.xml; the https form returns valid RSS 200). Miniflux sync
   publishes the feed changes; this commit does not edit `feeds.xml`.
+- `scripts/lint_opml.py`: duplicate `xmlUrl` detection normalizes scheme (`http`/`https`), host
+  case, one leading `www.` host label, and a trailing slash (same comparison as
+  `scripts.miniflux_push.url_key`, plus `www.` stripping; push and sync are unchanged). Those
+  duplicates are errors. Two www-only aliases already in Miniflux (Claroty Team82,
+  MalwareTech) stay warnings while their URL set is unchanged, so structural lint still passes
+  `feeds.xml`; a contributor PR cannot delete them. Duplicate normalized `htmlUrl`s and
+  cleartext `http://` `xmlUrl`s are warnings and do not change the exit code
+- `pyproject.toml`: Ruff also selects E, F, B, UP, I, and SIM. Line length stays 100, including
+  E501. `ruff` and `ty` stay advisory in `.github/workflows/pr-linting.yml`
+- `.python-version`: 3.14 → 3.12, matching CI and Ruff `target-version = "py312"`
 
 ## 2026-11-09
 

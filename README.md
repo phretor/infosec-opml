@@ -104,6 +104,21 @@ Feeds that Miniflux cannot fetch due to bot protection remain subscribed; each h
 check reports the runner's live result as `blocked-to-this-client` if it encounters a
 403 or challenge, without a hard-coded URL exemption.
 
+## Structural lint
+
+`uv run python -m scripts.lint_opml` checks `feeds.xml` beyond well-formed XML. Errors fail the
+command and the PR structural-lint check. Warnings are printed and do not change the exit code.
+
+Duplicate `xmlUrl` values are an error when they match after normalization: `http` and `https`
+are the same, host case is ignored, one leading `www.` host label is ignored, and a trailing
+slash is ignored. The query string is kept and the fragment is dropped. That key matches
+`scripts.miniflux_push.url_key`, plus the `www.` stripping; the push script itself is unchanged.
+Two www-only aliases already subscribed in Miniflux (Claroty Team82 and MalwareTech) are
+warnings while that exact URL set is unchanged, because a pull request cannot delete them and
+the next sync would restore a deletion. Any other normalized `xmlUrl` collision is an error.
+A repeated `htmlUrl` under the same normalization is a warning, because one site can publish
+more than one feed. An `xmlUrl` that uses cleartext `http://` is a warning.
+
 ## Suggesting feeds
 
 Pull requests that add feeds to existing folders are welcome: a merged addition is pushed into
