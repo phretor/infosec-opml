@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-23
+
+### Added
+- Darktrace Blog (07 🕵️ Threat Intel, Malware & Detection)
+- Profero (07 🕵️ Threat Intel, Malware & Detection)
+- Apple Security Research (16 🧪 Vendor, Labs & Advisory Feeds)
+- Hunterbrook Investigations (17 💼 Business & Markets)
+
+### Net result
+- 790 feeds across 24 nonempty flat folders
+
 ## 2026-11-14
 
 ### Changed
