@@ -737,6 +737,7 @@
     <outline text="22 💻 Tech, AI &amp; Science">
       <outline text="!important" title="!important" type="rss" xmlUrl="https://mattfrisbie.substack.com/feed" htmlUrl="https://mattfrisbie.substack.com"></outline>
       <outline text="9to5Mac" title="9to5Mac" type="rss" xmlUrl="https://9to5mac.com/feed/" htmlUrl="https://9to5mac.com/"></outline>
+      <outline text="AI News by Latent Space" title="AI News by Latent Space" type="rss" xmlUrl="https://latent.space/feeds/news.xml" htmlUrl="https://latent.space/"></outline>
       <outline text="Anthropic Engineering" title="Anthropic Engineering" type="rss" xmlUrl="https://rsshub.isrss.com/anthropic/engineering" htmlUrl="https://www.anthropic.com/engineering"></outline>
       <outline text="Anthropic News" title="Anthropic News" type="rss" xmlUrl="https://rsshub.isrss.com/anthropic/news" htmlUrl="https://www.anthropic.com/news"></outline>
       <outline text="Apple Newsroom" title="Apple Newsroom" type="rss" xmlUrl="https://www.apple.com/newsroom/rss-feed.rss" htmlUrl="https://www.apple.com/newsroom/rss-feed.rss"></outline>

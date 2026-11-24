@@ -3,6 +3,14 @@
 ## 2026-11-23
 
 ### Added
+- AI News by Latent Space (22 💻 Tech, AI & Science)
+
+### Net result
+- 791 feeds across 24 nonempty flat folders
+
+## 2026-11-23
+
+### Added
 - Darktrace Blog (07 🕵️ Threat Intel, Malware & Detection)
 - Profero (07 🕵️ Threat Intel, Malware & Detection)
 - Apple Security Research (16 🧪 Vendor, Labs & Advisory Feeds)
