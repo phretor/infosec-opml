@@ -347,7 +347,7 @@
       <outline text="Cyber-Threat.net" title="Cyber-Threat.net" type="rss" xmlUrl="https://cyber-threat.net/feed/" htmlUrl="https://cyber-threat.net/"></outline>
       <outline text="Cybersecurity News: Get the Latest Trends &amp; Threats | Cisco Umbrella" title="Cybersecurity News: Get the Latest Trends &amp; Threats | Cisco Umbrella" type="rss" xmlUrl="https://umbrella.cisco.com/blog/feed/" htmlUrl="https://umbrella.cisco.com/blog"></outline>
       <outline text="Cyble" title="Cyble" type="rss" xmlUrl="https://cyble.com/feed/" htmlUrl="https://cyble.com"></outline>
-      <outline text="Darktrace Blog" title="Darktrace Blog" type="rss" xmlUrl="https://www.darktrace.com/blog/rss.xml" htmlUrl="https://www.darktrace.com/blog"></outline>
+      <outline text="Darktrace Blog" title="Darktrace Blog" type="rss" xmlUrl="https://www.darktrace.com/blog/rss.xml" htmlUrl="https://www.darktrace.com"></outline>
       <outline text="Elastic Blog - Elasticsearch, Kibana, and ELK Stack" title="Elastic Blog - Elasticsearch, Kibana, and ELK Stack" type="rss" xmlUrl="https://www.elastic.co/blog/feed" htmlUrl="https://www.elastic.co/"></outline>
       <outline text="Elastic Security Labs" title="Elastic Security Labs" type="rss" xmlUrl="https://www.elastic.co/security-labs/rss/feed.xml" htmlUrl="https://www.elastic.co/security-labs"></outline>
       <outline text="Embee Research" title="Embee Research" type="rss" xmlUrl="https://www.embeeresearch.io/rss/" htmlUrl="https://www.embeeresearch.io/"></outline>
@@ -376,10 +376,10 @@
       <outline text="Nigerald's blog" title="Nigerald's blog" type="rss" xmlUrl="https://dtsec.us/feed.xml" htmlUrl="https://dtsec.us/"></outline>
       <outline text="Omer on Security" title="Omer on Security" type="rss" xmlUrl="https://www.omeronsecurity.com/feed" htmlUrl="https://www.omeronsecurity.com/"></outline>
       <outline text="pepe berba" title="pepe berba" type="rss" xmlUrl="https://pberba.github.io/feed.xml" htmlUrl="https://pberba.github.io/"></outline>
-      <outline text="Profero" title="Profero" type="rss" xmlUrl="https://profero.io/blog/index.xml" htmlUrl="https://profero.io/blog/"></outline>
       <outline text="RCE Security | Penetration Tests. Source Code Reviews. IT Security Audits." title="RCE Security | Penetration Tests. Source Code Reviews. IT Security Audits." type="rss" xmlUrl="https://www.rcesecurity.com/feed" htmlUrl="https://www.rcesecurity.com/"></outline>
       <outline text="Red Canary" title="Red Canary" type="rss" xmlUrl="https://redcanary.com/feed/" htmlUrl="https://redcanary.com/"></outline>
       <outline text="Resecurity" title="Resecurity" type="rss" xmlUrl="https://www.resecurity.com/feed" htmlUrl="https://www.resecurity.com/feed"></outline>
+      <outline text="Resources on Profero | Rapid-IR" title="Resources on Profero | Rapid-IR" type="rss" xmlUrl="https://profero.io/blog/index.xml" htmlUrl="https://profero.io/blog/"></outline>
       <outline text="Sandfly Security Blog RSS Feed" title="Sandfly Security Blog RSS Feed" type="rss" xmlUrl="https://sandflysecurity.com/blog/rss.xml" htmlUrl="https://sandflysecurity.com"></outline>
       <outline text="SCRT Team Blog" title="SCRT Team Blog" type="rss" xmlUrl="https://blog.scrt.ch/feed/" htmlUrl="https://blog.scrt.ch/"></outline>
       <outline text="Securelist" title="Securelist" type="rss" xmlUrl="https://securelist.com/feed/" htmlUrl="https://securelist.com/"></outline>
@@ -630,7 +630,7 @@
       <outline text="Troy Hunt's Blog" title="Troy Hunt's Blog" type="rss" xmlUrl="https://feeds.feedburner.com/TroyHunt" htmlUrl="https://www.troyhunt.com/"></outline>
     </outline>
     <outline text="16 🧪 Vendor, Labs &amp; Advisory Feeds">
-      <outline text="Apple Security Research" title="Apple Security Research" type="rss" xmlUrl="https://security.apple.com/blog/feed.rss" htmlUrl="https://security.apple.com/blog/"></outline>
+      <outline text="Apple Security Research" title="Apple Security Research" type="rss" xmlUrl="https://security.apple.com/blog/feed.rss" htmlUrl="https://security.apple.com"></outline>
       <outline text="Art Resilia" title="Art Resilia" type="rss" xmlUrl="https://www.artresilia.com/feed/" htmlUrl="https://www.artresilia.com"></outline>
       <outline text="Australian Cyber Aware" title="Australian Cyber Aware" type="rss" xmlUrl="https://kirbyidau.com/feed/" htmlUrl="https://kirbyidau.com/"></outline>
       <outline text="BH Consulting" title="BH Consulting" type="rss" xmlUrl="https://bhconsulting.ie/feed/" htmlUrl="https://bhconsulting.ie/"></outline>
@@ -663,7 +663,7 @@
       <outline text="DCD" title="DCD" type="rss" xmlUrl="https://www.datacenterdynamics.com/rss" htmlUrl="https://www.datacenterdynamics.com/en/"></outline>
       <outline text="Fast Company - technology" title="Fast Company - technology" type="rss" xmlUrl="https://www.fastcompany.com/technology/rss" htmlUrl="https://www.fastcompany.com/"></outline>
       <outline text="Forbes - Innovation" title="Forbes - Innovation" type="rss" xmlUrl="https://www.forbes.com/innovation/feed/" htmlUrl="https://www.forbes.com/innovation/"></outline>
-      <outline text="Hunterbrook Investigations" title="Hunterbrook Investigations" type="rss" xmlUrl="https://hntrbrk.com/investigations/rss.xml" htmlUrl="https://hntrbrk.com/investigations"></outline>
+      <outline text="Investigations" title="Investigations" type="rss" xmlUrl="https://hntrbrk.com/investigations/rss.xml" htmlUrl="https://hntrbrk.com"></outline>
       <outline text="L3Harris Technologies" title="L3Harris Technologies" type="rss" xmlUrl="https://www.l3harris.com/feeds/newsroom/rss.xml" htmlUrl="https://www.l3harris.com/"></outline>
       <outline text="Sifted" title="Sifted" type="rss" xmlUrl="https://sifted.eu/feed" htmlUrl="https://sifted.eu/"></outline>
       <outline text="TechCrunch" title="TechCrunch" type="rss" xmlUrl="https://techcrunch.com/feed/" htmlUrl="https://techcrunch.com/"></outline>
